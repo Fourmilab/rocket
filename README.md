@@ -1,6 +1,6 @@
 # Fourmilab Rocket
 
-![Fourmilab Rocket](marketplace/images/rocket_1.png)
+![Fourmilab Rocket](marketplace/images/rocket1.png)
 
 [Fourmilab Rocket](https://marketplace.secondlife.com/p/Fourmilab-Rocket/19209433)
 is a flying vehicle for the Second Life virtual world which can be used 
