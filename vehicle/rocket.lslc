@@ -1,0 +1,9 @@
+
+#   Configure for Fourmilab Rocket
+
+VERSION = "1.0"
+ROCKET = 1
+UFO = 0
+
+SAM_TRACE = 1
+

@@ -1,0 +1,846 @@
+                           Fourmilab Rocket
+
+                              User Guide
+
+Fourmilab Rocket is a cartoon-like rocket flying vehicle for the Second
+Life virtual world.  Although deliberately given the appearance of an
+ACME product from the Wile E. Coyote and Roadrunner universe, it is a
+fully-functional vehicle which can be configured in many ways from
+commands in local chat, all of which may be used in scripts stored in
+notecards in the vehicle's inventory.  Features include:
+
+    • Seating for a pilot and one passenger
+    • Manual flying via navigation keys
+    • Floating text control panel showing flight information
+    • Comprehensive autopilot allowing long-range missions
+        • Terrain following radar adjusts altitude to avoid
+          high ground or obstacles in the flight path
+        • Recovery from collisions, automatic fly-up over obstacles
+        • Auto-land upon arrival at the destination
+    • Automatic recovery from many (but not all) upsets after
+      crossing region boundaries
+    • Database of “SAM sites”: threats such as ban lines or
+      no-entry parcels, automatic diversion around threats
+      with autopilot engaged, warning in manual flight
+    • Dropping anvils on the ground or objects below the rocket.
+      An interactive target is included for bombing competitions
+      and keeps score.
+
+Basic Flight
+
+Rez the rocket from your inventory on land where you're allowed to
+create objects.  Note that there are numerous airport hubs for the Get
+the Freight Out (GTFO) game which have “rez zones” where you can rez
+vehicles.  You do not have to be signed up for the game to use these
+airports. After the rocket is created, sit on it (which you can do
+simply by touching the fuselage).  You fly by pressing the navigation
+keys:
+    Up arrow        Go forward
+    Down arrow      Go backward
+    Left arrow      Left (port) turn
+    Right arrow     Right (starboard) turn
+    Page Up         Climb
+    Page Down       Descend
+Yes, I know that real rockets cannot climb and descend vertically or
+fly backward.  This is a CARTOON rocket!
+
+While in flight, floating text will appear above the rocket giving
+its current bearing (0° North, 90° East, 180° South, 270° West),
+Altitude, and the altitude of the terrain below the rocket.  If a
+destination has been specified with “Set destination” the range to
+the destination in metres and the azimuth angle to the destination
+with respect to the rocket's current orientation will be shown.
+
+Autopilot
+
+The autopilot automates the routine task of flying and handles details
+such as adjusting altitude to avoid high terrain or obstacles in the
+rocket's path, evading threats (such as banned parcels or “security
+orbs”) along the way, and landing automatically at the destination.  To
+use the autopilot, first specify a destination in any of the forms used
+in Second Life (see the “Set destination” command below for details),
+then engage the autopilot with “Set autopilot on”.  These commands are
+sent in local chat, by default on channel 1633.  (1633 is the date of
+the supposed human rocket flight by intrepid Ottoman aeronaut Lagâri
+Hasan Çelebi.)  To set the destination to the middle of Fourmilab
+Island (to which you cannot fly, as it is an isolated island), you
+would type in local chat:
+    /1633 set destination secondlife://Fourmilab/128/128/28
+    /1633 set autopilot on
+Any of the commands and arguments can be abbreviated to just the
+first two characters.  Other commands allow you to set the cruising
+altitude above terrain, the accuracy with which the autopilot will
+maintain altitude and converge on the destination, and other matters.
+
+Terrain Following
+
+As the rocket flies with the autopilot engaged, it automatically
+monitors the terrain below it and in its path to detect high terrain or
+obstacles, and commands altitude adjustments to avoid them.  An
+extremely tall obstacle may not be detected in time to avoid it, but in
+most cases this will avoid collisions.
+
+Collision Recovery
+
+With the autopilot engaged, if terrain following fails to avoid an
+obstacle and you collide with it, the rocket will back up and perform
+an emergency fly-up to try to avoid the obstacle.  In most cases this
+will get you past it without the need to take manual control.
+
+SAM Sites
+
+Flying through Second Life will acquaint you with some of its aspects
+which make for “unfriendly skies”.  In particular, flying into a parcel
+which has erected ban lines or has a “security orb” that throws out
+those who enter may result in your vehicle being de-materialised and
+your falling to earth or being teleported back to your home location.
+We model these as Surface-to-Air Missile (SAM) Sites, and allow you to
+enter their locations, the radius at which they present a threat, and
+how high the threat extends into the air (many security systems allow
+overflight above a certain altitude).  You might specify a SAM threat
+on Fourmilab Island with:
+    /1633 Set SAM site 10 200 secondlife://Fourmilab/54/40/26
+which describes a 200 metre tall obstacle with a threat radius of 10
+metres around its location.  When the autopilot is engaged, if it
+detects a SAM site along the current trajectory, it will automatically
+divert to a waypoint that evades the site, choosing one which causes
+the shortest diversion from a direct path to the destination.  In
+manual flight mode, a SAM warning will be displayed on the pilot's
+floating text control panel, but it's up to the pilot to divert until
+the warning is cleared.
+
+Dropping Anvils
+
+No ACME rocket would be complete without the ability to drop anvils on
+pesky roadrunners or other nuisances.  While flying the rocket, just
+touch the rocket body or enter the “Drop” or “Fire” command (they are
+synonyms) in local chat, and an anvil will be dropped from the rocket's
+current position.  When the anvil hits the ground or an object below,
+it will explode in a cloud of smoke, emit a bang, and place a temporary
+impact marker (white star) which will disappear after thirty seconds.
+Regrettably, you can only drop anvils above land on which you're
+allowed to create objects, which ruins a lot of the fun you might
+imagine you'd have with this feature.  However, note that many
+airports, public sandboxes, and “rez zones” do allow you to create
+objects, so it's bombs away there.  That's probably why you don't see
+many roadrunners around such places.  A passenger on board the rocket
+can also drop anvils by touching the rocket body: this allows the
+passenger to act as bombardier in competitive bombing competitions
+(which are a lot of fun).
+
+Chat and Script Commands
+
+The rocket listens on local chat for commands on channel 1633 (you can
+change the channel with the “Channel” command: see below). All
+commands can be submitted either from local chat or by a script
+supplied in a notecard in the rocket's inventory.  You do not need to
+be seated on the rocket to send commands.  The following commands are
+provided.  All commands and parameters may be abbreviated to two
+characters and are case-insensitive: hence “Set script run Test” may be
+entered as “se sc RU Test”.
+
+    Access public/group/owner
+        Specifies who can fly the rocket.  You can restrict it to the
+        owner only, members of the owner's group, or open to the
+        general public.  Note that if you open access to the public,
+        somebody may take your rocket and fly away with it.  Once an
+        authorised avatar is seated on the rocket as pilot, anybody may
+        sit in the passenger seat.
+
+    Channel n
+        Sets the channel on which the rocket listens for commands in
+        local chat.  The default is 1633.  Note that the channel number
+        will be reset to the default if you reset the script either
+        with the edit menu or the Restart command.
+
+    Clear
+        Send vertical white space to local chat to separate output when
+        debugging.
+
+    Drop
+    Fire
+        Drop the anvil bomb.  The two commands are synonyms for the
+        same action.  You can also drop the bomb by touching the rocket
+        body. You can drop an anvil with these commands even if no
+        pilot is seated on the rocket.
+
+    Echo text
+        Display the text in local chat.  This is primarily used by
+        notecard scripts which wish to display information to those who
+        run them.  The text may be multiple words in upper and lower
+        case characters.
+
+    Help
+        Give this notecard to the requester.
+
+    Mend camera
+        Occasionally, after a region crossing, the camera position for
+        the pilot and/or passenger may be lost, resulting in an odd
+        viewpoint.  Since the user is free to move the camera at will,
+        there is no way to detect this automatically and restore the
+        original camera position without overriding the user's control
+        over the camera.  If the camera position has been lost, the
+        “Mend camera” command will usually restore it.  (I say usually
+        because nothing is certain after a region crossing problem.)
+        At present, “camera” is the only thing you can mend, but must
+        be specified to permit future extensions.
+
+    Restart
+        Restart all of the scripts which control the rocket.  All
+        settings are restored to their defaults, including the channel
+        on which the rocket listens in local chat.
+
+    Set
+        The Set command sets a variety of parameters which affect the
+        operation of the rocket.
+
+        Set autopilot
+            These commands affect various aspects of the autopilot.
+
+            Set autopilot on
+                Turns on the autopilot and begins to fly toward the
+                specified destination.  You must have previously set
+                the destination with “Set destination”.
+
+            Set autopilot off
+                Turns off the autopilot.  You can also disengage the
+                autopilot by pressing the Back (down arrow) key while
+                the autopilot is flying.  Pressing any other navigation
+                key temporarily suspends the autopilot and allows
+                manual control (including with the Back key).  After
+                ten seconds of no pilot input, the autopilot will
+                re-engage and proceed to the destination.
+
+            Set autopilot altitude n
+                Specifies the cruising altitude in metres above terrain
+                and any structures below.  The terrain following radar
+                will automatically scan below and ahead of the rocket
+                and adjust the altitude to maintain this altitude. By
+                default, the altitude is 120 metres above terrain.  Ban
+                lines for property whose owners have restricted access
+                generally extend 80 metres above terrain, so flying
+                lower risks hitting a one and being ejected from the
+                rocket.
+
+            Set autopilot land [on/off/now]
+                If no on or off argument or “now” is specified,
+                immediately disengage the autopilot (if engaged) and
+                immediately activate the auto-land process.
+                Otherwise, set whether the autopilot will land after
+                arriving at the destination. If flying via one or more
+                waypoints on the way to the destination, set land off
+                for all but the last leg of the flight.
+                
+            Set autopilot mark at/clear/list
+                The autopilot allows you to define named destinations
+                called “marks”.  To create a mark use:
+                    Set autopilot mark at Name Dest
+                where Dest is a destination specified in any of the
+                forms accepted by “Set destination” and Name is
+                an alphanumeric name which is case sensitive.  A
+                particularly handy Dest specification is “here://”,
+                which defines a mark at the vehicle's current position.
+                A list of all marks is displayed with “Set autopilot
+                mark list”.  To clear a mark by name, use “Set autopilot
+                mark clear Name”; omitting the name deletes all marks.
+                To reference a mark in “Set destination” use
+                “mark://Name>”, where name was given when you created
+                it.
+
+            Set autopilot tolerance altitude/range n
+                Specify the tolerance, in metres, within which the
+                autopilot will maintain the specified altitude above
+                terrain and distance from the specified destination at
+                which it will disengage and (if specified) begin the
+                auto-land procedure.  These tolerances are set to 3 by
+                default.  If flying through one or more waypoints, you
+                may want to increase the tolerance to, say, 10 metres
+                for the intermediate destinations so the rocket doesn't
+                waste time fine-tuning its position at the waypoints.
+
+        Set destination SLUrl/Destname
+            Set the destination to which the autopilot will fly if
+            engaged, and which the Range and Azimuth indicators on the
+            pilot's control panel (floating text) will indicate. You
+            can specify the destination in any of the following forms:
+                Fourmilab Island, Fourmilab (120, 122, 28) - Moderate
+                http://maps.secondlife.com/secondlife/Fourmilab/120/122/28
+                secondlife://Fourmilab/128/122/28
+                
+            You can specify a destination at the vehicle's current
+            position with:
+                here://
+            This is useful in conjunciton with the “Set autopilot mark”
+            command to save a position to return to later.
+            
+            To set the destination to a mark previously stored with
+            “Set autopilot mark at Name”, use:
+                mark://Name
+            
+            In addition, you can specify a random destination either
+            within the current region or in a territory of a specified
+            number of adjacent regions using:
+                random://region/xl-xh/yl-yh/zl-zh
+            where
+                region  If ".", "0", or "", the current region.
+                        If a number greater than 0, a location
+                        in an area consisting of the current region
+                        and that number of adjacent regions.
+                xl-xh   Low and high bounds for X co-ordinate.  If
+                        a single number is specified, that fixed
+                        co-ordinate.  If blank, a value between 0
+                        and 256.
+                yl-yh   Low and high bounds for Y co-ordinate, with
+                        defaults as for X.
+                zl-zh   Low and high bounds for Z co-ordinate (altitude).
+                        If a single value is specified, that fixed value.
+                        If no value specified, a random value between 0
+                        and 4096.  If blank, a fixed value of 50 metres.
+            The Second Life grid is not completely tiled with active 
+            regions.  If the random selection chooses a location where 
+            no region exists, it will retry as many as five times 
+            before giving up.
+
+        Set echo on/off
+            Controls whether commands are echoed to the sender in local
+            chat.  Commands entered from chat are prefixed with “>>”,
+            while commands from a script are prefixed with “++”.  A
+            command which begins with “@” will never be echoed.  Do not
+            confuse Set echo with the Echo command, described above.
+
+        Set panel on/off
+            Show or hide the pilot's control panel, displayed as
+            floating text above the pilot's seat.
+
+        Set SAM
+            These commands control the Surface-to-Air Missile (SAM)
+            threat evasion system.  The SAM system can be used to mark
+            banned property from which you will be ejected (losing the
+            rocket) if you attempt to enter, or places which have
+            annoying pop-ups or other irritations.  When the autopilot
+            is engaged, it will automatically divert to intermediate
+            waypoints to evade SAM sites with as little diversion from
+            a direct course as possible.  In manual flight mode, SAM
+            threat warnings will appear on the pilot's control panel
+            (floating text) giving the name, range, and bearing of the
+            closest SAM site along the path to the destination.
+
+            Set SAM delete n/all
+                Delete the numbered (numbers come from the list
+                command, described below) SAM site, or all sites.
+
+            Set SAM impact ignore/warn/disable/eject/explode
+                Specifies the action to be taken when the vehicle
+                collides with a cooperating SAM site.
+                    ignore      Completely ignore impacts, other than
+                                the vehicle's own collision response
+                                (default).
+                    warn        Issue a warning on local chat,
+                                identifying the label of the SAM site
+                                with which the vehicle collided.
+                    disable     Disable the vehicle.  The engine is
+                                stopped, user control is disabled, and
+                                motion is halted.  The vehicle remains
+                                disabled until the pilot stands and
+                                departs the vehicle.
+                    eject       The pilot is ejected from the vehicle.
+                                Note that if the vehicle is over land
+                                where the owner does not have the right
+                                to rez objects, it will probably be
+                                returned to Lost and Found.
+                    explode     DANGEROUS!  The vehicle is destroyed,
+                                precipitating the pilot and passenger 
+                                to whatever is below. Note that this 
+                                makes no backup of the vehicle, and 
+                                you'll have to rez a new vehicle.
+                These modes are mostly intended for racing games, where 
+                part of the challenge is dodging SAM sites.  They allow 
+                competitors who hit a site to be eliminated.
+
+            Set SAM list
+                List current SAM sites.
+
+            Set SAM range n
+                Only scan for SAM sites with the specified range in
+                metres.  This is set to 1024 by default.
+
+            Set SAM scan
+                To facilitate setting up complicated test cases for SAM
+                site evasion, "Set SAM scan" automatically scans for
+                objects within the current region within 96 metres of
+                the vehicle and named "SAM site" (the name must be
+                spelled precisely this way, including spacing and
+                capitalisation).  A SAM site entry in the threat list
+                is created for each site found, with its position being
+                that of the object and its label, threat radius, and
+                threat altitude taken from the object's description,
+                for example:
+                    "Threat 1" 12 1024
+                for a site named "Threat 1" with a threat radius of 12
+                metres extending up to 1024 metres altitude.  If the
+                label is omitted, one is generated from the region name
+                and site's location.  The list of sites found replaces
+                any previously defined SAM sites.
+
+            Set SAM site ["label"] radius altitude SLUrl/Destname
+                Add a SAM site to the threat list.  You may specify a
+                quoted label for the site (one or more words), followed
+                by its threat radius and the altitude to which the
+                threat extends (many property ban lines and security
+                orbs allow free passage above a certain altitude),
+                followed by the location of the site as on “Set
+                destination”.  For example, here is declaration of a
+                tall tower in the middle of Fourmilab island that I use
+                for testing.
+                    Set SAM site "Big tower" 8 256 secondlife://Fourmilab/128/128/25
+                If no label is specified, one will be generated from
+                the region name and co-ordinates within the region.
+
+            Set SAM threats
+                Perform a threat scan and display the results for all
+                SAM sites.
+
+            Set SAM trace on/off
+                Enable or disable detailed tracing of SAM threat
+                evaluation. This produces voluminous output and is
+                generally only of interest to developers.
+
+        Set script
+            These commands control the running of scripts stored in
+            notecards in the inventory of the rocket's root prim.
+            Script commands are identical to those entered in local
+            chat (but, of course, are not preceded by a slash and
+            channel number). Blank lines and those beginning with a “#”
+            character are treated as comments and ignored.
+
+            Set script run name
+                Run the named script.  The name must be specified
+                exactly as in the inventory, including upper and lower
+                case letters.
+
+            Set script stop
+                Stop all running scripts.  An error detected in a
+                script command will automatically stop running scripts.
+
+            Set script delete name
+                Delete the named script from the inventory.  The name
+                must be specified exactly as it appears in the
+                inventory.
+
+            Set script list
+                List scripts available in the inventory.
+
+            Set script loop n
+                Begin a loop within the script which will be executed n
+                times, or forever if n is omitted.  Loops may be nested,
+                and scripts may run other scripts within loops.  An
+                infinite loop can be terminated by "Set script stop",
+                the pilot standing up, or manually disconnecting the
+                autopilot while activated with the down arrow key.
+                
+            Set script end
+                Marks the end of a "Set script loop".  If the number of 
+                iterations has been reached, proceeds to the next 
+                command. Otherwise, resumes at the statement at the 
+                start of the loop.
+
+        Set smoke r g b alpha
+            Sets the colour, as red, green, and blue components between
+            0 and 1, and transparency (0 invisible, 1 opaque) of the
+            smoke emitted from the rocket's nozzle while flying.
+            Default values are “0.75 0.75. 0.75 1”, light grey opaque
+            smoke. Setting the transparency to 0 disables the smoke
+            entirely.
+
+        Set target clear
+            Resets the number of hits and the total score on targets on
+            which the pilot has made hits dropping anvils.  The number
+            of anvils dropped, hits, and scores in the pilot's control
+            panel are also cleared.
+
+        Set terrain obstacles on/off
+            Controls whether Terrain Following will scan for obstacles
+            (such as tall buildings, objects floating in the air, etc.)
+            in the current flight path and change altitude to avoid
+            them.  You'll usually want to leave this on (the default),
+            but when experimenting with SAM site evasion, it can help
+            to remove fly-up as an alternative to plotting a course
+            around the threats.
+
+        Set thrust horizontal/vertical/x/y n
+            Sets the thrust applied by the motion keys.  Thrust can be
+            specified separately in the horizontal or x axis (the terms
+            are synonyms) and vertical or z axis.  Default horizontal
+            thrust is 20 and vertical thrust is 15.  If you set the
+            thrust too high, you're likely to overshoot when trying to
+            navigate precisely, and crossing region boundaries at
+            “ludicrous speed” is a recipe for disaster.
+
+        Set trace on/off/n
+            Enable or disable internal tracing information in local
+            chat which is usually of interest only to developers.  In
+            addition to “off” or “on”, you can set the trace level to
+            a number from 0 (off) and 1 (on) through 9, with higher
+            numbers generating ever more verbose and detailed output.
+
+        Set volume v
+            Sets the volume of the engine sound between 0 (silent) and
+            1 (maximum).  Setting the volume to 0 makes the rocket
+            entirely silent for stealth missions.  The volume setting
+            also affects the “boink” sound when you collide with an
+            object or “scrape” when hitting terrain.
+
+    Status
+        Show a variety of detailed status information in local chat.
+        Much of this information is of interest only to developers.
+
+Ban Lines and Security Orbs
+
+Property owners in Second Life have considerably more liberty than
+owners of real estate in most jurisdictions in the real world.  For
+example, even if you have outright title to a tract of land, you're not
+permitted to set up a surface-to-air missile (SAM) site in your back
+yard and shoot down an airliner which happens to intrude into your
+airspace kilometres above ground level.  In Second Life, (subject to
+covenants which may be imposed upon the land), you are free to do this,
+and it makes flying across the Second Life grid “interesting”.
+
+The two principal things you need to worry about are “ban lines” and
+“security orbs”.  Ban lines are erected when the property owner
+restricts access to the land based on various criteria such as
+membership in a given group, presence on an explicit access list, age,
+or having payment information on file.  As you approach the boundary of
+land with restricted access, you'll see yellow ban lines surrounding it
+and, if you attempt to cross them in a vehicle, your vehicle may be
+instantly destroyed and your avatar dumped to the ground. These ban
+lines appear only as you approach fairly near to the property. This is
+fine if you're exploring on foot, but in a fast flying vehicle you may
+not be able to stop in time after you see them.  Ban lines usually
+extend only a limited distance above the terrain (although a ban on a
+list of specific avatars is unlimited in altitude), so if you fly above
+the ban limit, you're usually safe.  Various Second Life documents cite
+different altitudes for the ban limit, but generally if you're 100
+metres or more above the terrain you'll be OK.  The terrain following
+feature in the Fourmilab Rocket autopilot will maintain a safe altitude
+as you cross hill and dale.
+
+More pernicious are “security orbs”, a term derived from the most
+popular product used to eject unwanted visitors from land.  These are
+scripted devices which monitor entry to a parcel or region and, if the
+avatar is not on an access list or member of an allowed group, teleport
+the avatar back to either their home location or off the restricted
+property.  The altitude limit at which the ban is enforced is entirely
+up to the user who configures the security device: you will encounter
+some which will bounce you regardless of how high you're flying above
+the restricted property.  Many of these devices are set up to issue a
+warning, either by popping up a dialogue or in Local Chat, informing
+the user they have some brief interval in which to leave the property
+(for example, ten to thirty seconds) or else be ejected.  When flying
+across the grid, these are an annoyance (since you have to manually
+close each of the warning pop-up dialogues), but generally not a
+problem since the flying vehicle will almost always depart the property
+before being forcibly ejected.  But again, the grace period before an
+avatar is ejected is entirely at the discretion of the owner of the
+security device, and they are perfectly free to set it up on a
+hair-trigger where crossing their property line means instant ejection.
+
+Running into ban lines or being ejected by a security orb is intensely
+irritating for pilots and passengers of flying vehicles.  While those
+on board the vehicle find themselves teleported home or dropped into
+some location near the banned property, the vehicle itself, shorn of
+its passengers, is usually destroyed and returned to the owner's
+Lost And Found folder.  Since users are only generally permitted to
+rez objects on their own land or public sandboxes or rez zones, it
+usually isn't possible to re-rez the vehicle and continue, diverting
+around the banned property.  It's usually an abrupt end to the trip,
+unless you can find a nearby rez zone where you can re-instantiate the
+vehicle and proceed.
+
+Unfortunately, there is no reliable way to detect these hazards
+remotely. In many cases you simply have to run into them and learn from
+experience. The SAM Sites facility in the Fourmilab Rocket provides a
+means of coping with these hazards.  Create a Notecard with a list of
+banned territories in regions where you fly, then import it before a
+journey with the “Set script run” command.  When flying in autopilot,
+the rocket will automatically divert around these perils, and in manual
+flight warnings of nearby hazards in the flight path will appear on the
+pilot's floating text control panel.
+
+The Edge of the World
+
+Although the Second Life grid has a uniform Cartesian co-ordinate
+system uniquely identifying every point within it, the grid is not
+filled (or “tiled”) with active regions running simulations.  There are
+many areas, identified on the World Map by a completely uniform blue
+colour and bearing no region name, which have no simulator running, and
+into which avatars and vehicles may not enter.  Running into one of
+these areas causes no damage: you simply “bounce off”, and any attempt
+to proceed into the non-existent simulation is ignored.  I call these
+areas with no simulation “the edge of the world”, and although there be
+no dragons there, they're still a major annoyance when trying to fly
+from point A to point B and you discover there's no direct route
+between them.
+
+When exploring the Grid, it's wise to keep the World Map open in a
+corner of your screen.  This lets you see your progress and alerts
+you when you're approaching or have encountered an edge of the world
+boundary.  When flying with the autopilot, the best approach is to
+temporarily take manual control (by pressing any of the navigation keys
+other than Back [down arrow]) and then trying to find a way around
+the blank region by flying laterally until you find an area populated
+by active simulations.  You can then wait a few seconds, after which
+the autopilot will resume control and continue to proceed to the
+destination.  (Note that once you've suspended the autopilot by
+pressing a navigation key, you're free to use the Back key if you
+wish; it only terminates the autopilot when pressed first while the
+autopilot is active.)
+
+When flying with the autopilot, the rocket will attempt to detect
+when it becomes stalled trying to enter a non-existent simulation
+and report “stalled” on the pilot's control panel.  This lets the
+pilot know it's time to check the map, temporarily override the
+autopilot, and try to find a way around the hole in the grid.
+
+About Region Crossing
+
+The bane of vehicle operation in Second Life is region crossing.  The
+Second Life grid is divided into “regions” which are 256 metres square.
+Each region is emulated by a separate simulator, running as a process
+on a computer.  When you cross from one region to another, you are
+effectively teleporting from the sending region to the receiving
+region. If you are seated on a vehicle, the vehicle, your avatar, and
+all of your avatar's attachments are teleported independently, and may
+arrive (or maybe not) in any order, and sometimes with long delays or
+not at all.  This is one of the most serious ways in which the illusion
+of Second Life's being a seamless grid breaks down.  Every now and
+then, you'll innocently cross a region boundary and some crazy thing
+will happen: you'll end up naked because your clothes didn't arrive, or
+you'll lose the ability to navigate, or your animations will be lost,
+or something even more weird will happen.  When you're just walking
+around, this doesn't happen very often (although teleport failures are
+something most Second Life residents have experienced on numerous
+occasions).  But in a vehicle, particularly a fast one such as the
+Fourmilab Rocket, you can cross regions in a matter of seconds, and
+every time you roll the dice, the probability they'll come up snake
+eyes on your voyage increases.
+
+The Fourmilab Rocket incorporates technology developed by Second Life
+resident Animats:
+    http://maps.secondlife.com/secondlife/Vallone/246/23/36
+and published on GitHub:
+    https://github.com/John-Nagle/lslutils
+called RegionRX which recovers from many of these region crossing
+upsets.  In many cases, used with extensions developed for the
+Fourmilab Rocket, it will keep a turbulent region crossing from
+wrecking your day.  We wait for everything to arrive after arriving in
+the new region, restore lost avatar animations (which cause avatars to
+float in the air above the rocket), recover lost permissions, which
+make control keys go dead, and otherwise mitigate the slings and arrows
+of region crossings.  If isn't perfect: sometimes Second Life just
+bungles a region crossing and your avatar crosses leaving the rocket in
+the old region (where, without anybody sitting on it, it is returned to
+your Lost And Found folder in the Inventory, or on a region crossing, a
+passenger may not come across, and find themself stranded in the old
+region with the vehicle long gone.  We try to fix everything that's
+fixable, but some things just aren't.  Think of long-range aviation in
+Second Life as an adventure, like the historic first cross-country
+flight of the Vin Fiz Flyer in 1911, which took 49 days to fly from New
+York to Los Angeles, crashing 16 times along the way.
+    https://en.wikipedia.org/wiki/Vin_Fiz_Flyer
+
+There are some things you can do to reduce the probability of region
+crossing calamities.  First of all, use reasonable thrust levels to
+reduce the speed at which you cross regions (see “Set thrust” above).
+If you cross regions at ludicrous speed, expect ludicrous results.  Try
+to limit the number of attachments to your avatar: each attachment has
+to teleport independently, and that increases the odds one or more
+won't come across.  Do you really need those earrings or the HUD that
+tells you how many meeroos are in the vicinity?  It's great to have
+company on a long trip, but carrying a passenger doubles the
+probability you may lose them on a region crossing (and if they have
+lots of attachments, it gets even worse).  On long-distance trips, you
+may wish to reduce your draw (or render) distance in the graphics
+preferences of your viewer.  This may make the scenery less
+interesting, but it will dramatically reduce the amount of information
+the server(s) must send to your viewer and reduce lag in displaying
+your view of the world.
+
+And, finally, remember that this is all for fun.  Second Life isn't
+perfect; life isn't perfect.  Look on the thrills and spills as part of
+the adventure and enjoy it.
+
+Control Recovery Amulet
+
+One of the failures which can occur when Second Life botches a region 
+crossing is “loss of control”.  The most common symptom of this is the 
+ability to move forward or backward with the arrow keys, but not turn 
+to the side.  This not only affects manual steering of the vehicle, but 
+also navigating your avatar after you stand and leave it.  This failure
+often persists even after teleporting to a new location, and sometimes
+can be remedied only by logging out of Second Life and signing back
+in, which is intensely irritating.
+
+The Fourmilab Rocket is supplied with a Control Recovery Amulet which, 
+in some cases, allows you to recover from these failures.  The amulet 
+has the appearance of a gold bracelet which you attach to your avatar 
+with the “Add” mechanism.  Once attached, it listens on local chat 
+channel 77 for commands.  You can inquire its status with:
+    /77 status
+and it will report information about the avatar to which it is 
+attached, the permissions granted, and which animation the avatar is 
+running.  If a loss of control occurs, you can attempt recovery with:
+    /77 fix controls
+(as always, commands and parameters may be abbreviated to two letters). 
+This will acquire all controls from the avatar and then release them 
+back, which will, in many loss of control situations, restore the 
+controls to the avatar.  If this fails, you might try sitting back on 
+the vehicle and standing again, or sitting somewhere on the ground and 
+standing.  If none of these work, odds are you'll have to log out and 
+back in to restore control over the avatar.
+
+The UFO
+
+The Fourmilab Rocket is based upon a collection of scripts which can be
+relatively easily adapted for other flying vehicles.  Since they are
+delivered with full permissions, you are free to use them in your own
+builds, subject to the terms of the Creative Commons license cited
+below.  To illustrate use in another vehicle, the distribution includes
+an entirely different vehicle, the UFO, which is a two-passenger flying
+disc complete with bubble canopy and lights which move and change
+colours in flight and whose glow increases with speed.  The UFO is
+simpler than the rocket in that it doesn't have the articulated tail
+fins, gimbaling rocket nozzle, or exhaust trail (that's the advantage
+of antigravity!), but in operation it is 100% compatible with the
+rocket, includes all of the features described above, and accepts the
+same chat commands.  To avoid conflict when both vehicles are operated
+at the same time, the UFO listens for chat commands on channel 1947
+(the year of the Roswell incident).
+
+SAM Site Deployer
+
+To have fun with SAM evasion, a random SAM Site Deployer is included  
+This is a cylinder you can place anywhere which listens on channel 75 
+(from S-75, the Soviet designation for the SAM which NATO calls the 
+SA-2 Guideline, known for, among other things, shooting down the U-2 in 
+1960).
+
+It accepts commands as follows:
+    deploy n_sites radius t_rad t_alt height distribution
+        Place sites where values are as follows, with defaults in
+        parentheses:
+            n_sites         Number of sites to place (1)
+            radius          Maximum distance in X and Y of sites, metres (10)
+            t_rad           Threat radius of sites (0.1)
+            t_alt           Threat altitude of sites (99)
+                            Value of 0 means 4096 metres
+            height          Displayed height of threat markers (50)
+            distribution    Distribution of sites: (Uniform)
+                                Uniform
+                                Gaussian    Bell curve around centre
+                                Igaussian   Inverse bell curve, sparse at centre
+    remove
+        Remove all sites previously placed, whether in a single or multiple
+        place commands.
+
+In addition the Access, Channel, and Clear utility command are accepted
+as for the rocket.
+    
+Sites placed are all named "SAM site" so they will be found by the “Set 
+SAM scan” command, and have labels starting with “SAM ”.  Sites are 
+shown as semi-transparent cylinders whose tops and sides identify them 
+by number acccording to the resistor colour code.
+
+If you place too many SAM sites within a region, you may encounter an 
+out of memory crash in the vehicle's Set SAM scan command, as the list 
+of SAM sites is kept as a list in its script memory.
+
+Permissions and the Development Kit
+
+The Fourmilab Rocket is delivered with "full permissions". Every part
+of the object, including the scripts, may be copied, modified, and
+transferred without any restrictions whatsoever. If you find a bug and
+fix it, or add a feature, let me know so I can include it for others to
+use.  The distribution includes a "Development Kit" directory, which
+includes all of the textures used in the models.
+
+The Development Kit directory contains a Logs subdirectory which
+includes the development narratives for the project.  If you
+wonder, "Why does it work that way?" the answer may be there.
+
+Source code for this project is maintained on and available from the
+GitHub repository:
+    https://github.com/Fourmilab/rocket
+
+Acknowledgements
+
+    The sound effects are free clips available from:
+        https://www.soundeffectsplus.com/
+
+    The engine running sound for the rocket is derived from "Airplane
+    Turbines Exterior Ambience 01" (SFX 39399551):
+        https://www.soundeffectsplus.com/product/airplane-turbines-exterior-ambience-01
+    The clip was set to loop every ten seconds while the engine is
+    running.
+
+    The engine start sound was prepared by mixing the "Spaceship Launch
+    02" (SFX 39725776) clip:
+        https://www.soundeffectsplus.com/product/spaceship-launch-02
+    with the engine running sound above, fading the first into the
+    second.
+
+    The engine stop sound was made by fading out the engine running
+    sound.
+
+    The "Collision_boing" sound when the rocket collides with an object
+    is derived from "Comical Boing 02" (SFX 43134177):
+        https://www.soundeffectsplus.com/product/comical-boing-02
+
+    The "Collision_scrape" sound when the rocket collides with terrain
+    is derived from "Ice Scraper 01" (SFX 39196522):
+        https://www.soundeffectsplus.com/product/ice-scraper-01
+
+    The "Bomb_drop" sound when an anvil is dropped is based upon
+    "Comical Falling Down Whistle 01" (SFX 43162629):
+        https://www.soundeffectsplus.com/product/comical-falling-down-whistle-01
+
+    The "Balloon_Pop" sound when an anvil hits an object is derived
+    from "Balloon Explode" (SFX 43561988):
+        https://www.soundeffectsplus.com/product/balloon-explode-01/
+
+    The "Bomb_explosion" sound when an anvil hits the target or a 
+    destructive collision with a SAM site is extracted from "Cartoon 
+    Bomb Explosion 01" (SFX 43132584):
+        https://www.soundeffectsplus.com/product/cartoon-bomb-explosion-01/
+
+    The UFO engine flight sound is based upon "UFO 04" (SFX 39725830):
+        https://www.soundeffectsplus.com/product/ufo-04/
+
+    All of these effects are © Copyright Finnolia Productions Inc. and
+    distributed under the Standard License:
+        https://www.soundeffectsplus.com/content/license/
+    The sound clips were prepared for use in this object with the
+    Audacity sound editor on Linux.
+
+    The anvil mesh is based upon a Blender model of an anvil:
+        https://www.blendswap.com/blend/20662
+    developed by Alan Shukan:
+        https://www.blendswap.com/profile/278192
+    and used under a Creative Commons CC-BY license.
+
+License
+
+This product (software, documents, images, and models) is
+licensed under a Creative Commons Attribution-ShareAlike 4.0
+International License.
+    http://creativecommons.org/licenses/by-sa/4.0/
+    https://creativecommons.org/licenses/by-sa/4.0/legalcode
+You are free to copy and redistribute this material in any
+medium or format, and to remix, transform, and build upon the
+material for any purpose, including commercially.  You must give
+credit, provide a link to the license, and indicate if changes
+were made.  If you remix, transform, or build upon this
+material, you must distribute your contributions under the same
+license as the original.
+
+The anvil mesh and sound effects are licensed as described above
+in the Acknowledgements section.

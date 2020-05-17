@@ -1,0 +1,9 @@
+General purpose flying vehicle, robust against many region crossing problems
+
+Powerful autopilot with terrain following, collision recovery, and auto-land
+
+Evades hazards (SAM sites) such as banned parcels and security orbs
+
+Drops anvils which mark their point of impact for games
+
+Configurable via local chat commands; requires land and rez permission

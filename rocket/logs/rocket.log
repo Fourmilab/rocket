@@ -1,0 +1,2976 @@
+
+                        Fourmilab Rocket
+                        Development Log
+
+2019 September 20
+
+Added a VEHICLE_REFERENCE_FRAME setting to align the native
+Z axis of the root rocket body prim with the X axis along
+which we wish to fly.
+
+Changed the sit position to the rocket body (root prim) and
+adjusted the sit position, angle, and camera position
+accordingly.
+
+Removed the obsolete unattended beacon notification in the
+timer() event.
+
+2019 September 21
+
+Made sound clips as follows:
+
+    Engine flight
+        Looped for engine sound while in flight.  Based upon:
+            https://www.soundeffectsplus.com/product/airplane-turbines-exterior-ambience-01/
+        (SFX 39399551), normalised and clipped to exactly 10
+        seconds.
+
+    Engine start
+        Played when an avatar sits on the pilot seat.  Based
+        upon:
+            https://www.soundeffectsplus.com/product/spaceship-launch-02/
+        (SFX 39725776) at the start, fading in to the Engine flight
+        clip at the end.  Total running time is 5 seconds.
+
+    Engine stop
+        Played when an avatar stands up from the pilot seat.  This
+        is the Engine flight clip with a fade out to silence.  Total
+        running time is 2.05 seconds.
+
+
+Deleted the obsolete "Saddle" object linked to the object.
+The avatar now sits on the main rocket body (root prim).
+
+2019 September 22
+
+Added tail fins to the model, with names "Tail Fin n" where n is
+from 1 to 4.  You can add new components to the model by
+multiple selecting them one by one, then selecting the
+already-linked rocket, and performing a link.  The root prim
+will be preserved as the first by this operation.
+
+
+2019 September 24
+
+Tried attaching the Great Balls of Fire! launcher before boarding
+the rocket.  When you go into Mouselook, the fire button does
+nothing and, further, after you stand up, it still doesn't work.
+But, if you then detach it and re-attach it, it works fine.  It
+appears that if we want to include missile launching, we'll have
+to do it from the main script in the vehicle.
+
+2019 September 25
+
+Added a Mouselook event handler to the main flight control
+script.  It appears with with Firestorm you can't get into
+Mouselook while riding a vehicle by rolling the scroll wheel
+all the way forward, but clicking the button on the viewpoint
+panel works.  We seem to get the coordinates of the rocket,
+not those the user is looking at.
+
+2019 September 27
+
+The horizontal fins (up/down) (2 and 4) need to rotate about the X
+axis depending upon the Z motor deflection.
+
+The vertical fins (left/right) (1 and 3) need to rotate about the
+Z axis according to the angular motor X deflection.
+
+The nozzle needs to rotate around the X axis for up/down and Y axis
+for left/right.  The tailpipe either needs to move with the nozzle
+(which will be a mess) or else be invisible and purely a generator
+of the particles for the exhaust.
+
+2019 October 5
+
+Finally figured out what was going on with the pilot and
+passenger seat logic and llLinkSitTarget().  The global
+llSitTarget() is persistent, even across script resets, so if
+you've ever set a sit target, you have to get rid of it by an
+explicit call to:
+    llSitTarget(ZERO_VECTOR, ZERO_ROTATION);
+before your settings of llLinkSitTarget() will take effect.
+Then you can set targets in linked prims, which will be used as
+avatars sit on the root prim, in link order.  I arbitrarily put
+the pilot seat in the Tailpipe and the passenger seat in the
+Nosecone.  These can be any linked prims: the only thing that
+matters is that the pilot seat have a lower link number than the
+passenger.
+
+These work fine as long as the user sits on the root prim or
+some prim which does not have a llLinkSitTarget().  If the user
+sits on one of the prims with a target, things may get messy.
+I'll try to figure out a work-around for that in the future.
+But most people will click on the rocket body, so it's good
+enough for Boris at the present state of development.
+
+Added our first "set" variable: "volume".  This sets the volume
+of the engine noise, from 0 to 1.  (Due to how volume works in
+Second Life, you can set it greater than 1, which causes the
+volume to attenuate more slowly with distance.)  If set to zero,
+it completely suppresses the engine noise and never calls the
+sound APIs.  You can turn sound off whilst flying, but if you
+turn it on, the sound will not start until you stand up and
+start flying again.
+
+Abstergified a great deal of obsolete code relating to failed
+attempts to deal with multiple avatar seating.  There's still
+a way to go, but it is converging upon comprehensibility.
+
+2019 October 6
+
+Now we're going to try to texture the rocket.
+    Dimensions of rocket body:
+        X, Y 0.44363
+        Z    2.75141
+    Rotation:
+        X   270
+        Y   0
+        Z   90
+    Colour  255, 255, 0
+
+If we "unroll" the cylindrical rocket body, we have Pi * d
+circumference of 1.393704, for an aspect ratio of the texture
+of 2.75141 / 1.393704 = 1.974171.  For a texture with a width
+of 1024 pixels, then we want a height of 1024 / 1.974171 = 519
+pixels.
+
+Working on the Beta Grid, created a rocket body as above,
+uploaded the test texture, and applied it as follows:
+    Horizontal scale:   0.78726
+    Vertical scale:     0.98726
+    Repeats per metre:  1.77459
+    Rotation degrees:   270
+    Horizontal offset:  0
+    Vertical offset:    0.5
+
+Applied the developed texture to the rocket body in the
+production grid.
+
+Implemented deflection of the tail fins based upon the linear
+motor Z thrust (up/down) and the angular motor X direction
+(left/right).  The fins do a full surface pivot around their
+centre in their local Z axis.  This is done in the control()
+event, which is getting pretty long, so I may break it out
+and/or up into multiple functions once things are stable.
+
+Implemented gimbaling of the rocket nozzle based upon the linear
+motor X thrust and angular motor X direction.  These drive the
+nozzle gimbal local Z (up/down) and X (left/right) axes.  Note
+that the nozzle, located aft of the centre of mass, moves
+opposite to the direction of the vehicle.
+
+2019 October 7
+
+Our trick of fiddling with the tailpipe runs afoul of the
+gimbaling of the nozzle: the nozzle moves correctly, but the
+tailpipe remains immobile.  We could, at the cost of hideous
+local co-ordinate twiddling, make it move with the nozzle
+(which, of course, if Second Life implemented hierarchircal
+objects, would be completely trivial), but in the spirit of
+things we opt for a giant hack.  The tailpipe (which is just
+a disc at the exit of the nozzle) is made transparent, and
+the base of the nozzle cone (face 2) is coloured and made to
+glow when the engine is running and dark grey (0.15 RGB)
+when it's off.  This creates a combustion effect which moves
+with the engine as it gimbals.  For the moment, I left the
+tailpipe with a little presence so it's easier to select
+when editing.  Note that we use the tailpipe as the seat
+location for the pilot.  We should probably move this to the
+nozzle and get rid of the tailpipe entirely, which would
+reduce land impact by one prim.  But since that would mean
+resetting sit positions and camera offsets, that's a
+project for another day.
+
+Tested our adding the pilot's name to the object name after a
+colon, which will be used in our forthcoming race course
+construction set.
+
+Added a:
+    set smoke r g b alpha
+which sets the colour of the tailpipe smoke.  The r, g, and b
+values are from 0 to 1, as is alpha.  Setting alpha to 0
+suppresses the emission of smoke entirely.
+
+Extracted the code to enable and disable the particle system
+into a new smoke() function and changed the logic in the
+control() event so that smoke is emitted only while the
+vehicle is in motion.
+
+Added a very first cut of a bombing/missle mechanism.  I
+imported as "Anvil" our "Great Ball of Fire" projectile
+and added a fire() function which drops it.  I was hoping
+to use mouselook to aim a missile, but that seems hopeless:
+when the avatar is attached to a vehicle, I can't find any
+way to get the mouselook co-ordinates.
+
+The next thing I discovered is that you have to make the
+projectile object you're going to rez physical from the
+start; setting it with STATUS_PHYSICS when it gets control
+doesn't work.
+
+Next, I changed the llSetBuoyancy() call to set zero, which
+makes it fall like a gravity bomb.  Otherwise, it just hangs
+in mid-air unless you explicitly launch it with a velocity.
+
+Since mouselook seems so hopeless, I added a "fire" command
+to the chat channel to test releasing the projectile.
+
+Created an anvil logo with a red background and applied in
+Planar mode to both sides of Tail Fin 1.
+
+Got a preliminary version of bombing working.  I twiddled
+the control() handler so that it detects when the forward
+and backward motion keys are pressed simultaneously.  This
+triggers dropping the bomb and sets a mode which ignores
+further control inputs until both are released.  This lets
+you bomb on the fly by momentarily tapping the back key, then
+re-pressing the forward key.  This is fiddly, but nothing
+like getting into mouselook mode.
+
+Falling bomb whistle:
+    https://www.soundeffectsplus.com/product/comical-falling-down-whistle-01/
+Bomb explosion:
+    https://www.soundeffectsplus.com/product/cartoon-bomb-explosion-01/
+I processed these into:
+    Bomb_drop.wav
+    Bomb_explosion.wav
+converting to mono, re-sampling at 44.1 kHz, and normalising.
+
+Added the "Bomb Drop" sound to the Projectile object.  I had been
+using llTriggerSound() to play sound clips, but that doesn't seem
+to cancel a playing sound when you start another, so the bomb
+drop would continue to play after the impact.  I changed both the
+drop and impact to call llPlaySound() and it seems to be
+working now.
+
+Created a "Bombing target" object.  All this does at present is
+detect collisions and trigger an explosion pyrotechnic display
+and the "Bomb explosion" sound.  In the future, we may add
+reporting of miss distances, scorekeeping, etc.
+
+2019 October 8
+
+Made an "Impact marker" object, which is a flat disc prim with
+the top bearing a five-pointed star (U+066D) texture in white
+with a transparent background.  The other faces are
+transparent.  Included this object in the Anvil object.  The
+idea is that, on collision, a temporary impact marker will be
+dropped to indicate the position of the collision.
+
+Added an Impact marker to the inventory of the Anvil object.
+
+Implemented the commands via chat interface for both the
+Impact marker (channel 1959) and Anvil (channel 1960).  Both
+respond to the "stat" command, currently just reporting
+position, and the Anvil accepts an "impact" command, which
+nondestructively simulates an impact event.
+
+2019 October 11
+
+Implemented an initial proof of concept for impact markers. The
+script in the Anvil object will now rez an Impact marker at the
+point of impact, passing it a start parameter indicating its
+time to live in seconds (zero means infinite life).  The impact
+marker, in its on_rez() event handler, starts a timer which
+causes it to llDie() upon expiry.  This avoids the
+nondeterministic messiness of temporary objects, and allows us
+to add some drama when markers evaporate.  There is, as yet,
+none of the planned communication between markers and the
+target, but at least we're now creating autonomous markers to
+enable that capability.
+
+Added detection of region crossing, and it works (tested on
+mainland).  Now it's a question of re-establishing sitting
+avatars' positions, rotations, etc. after re-appearing following
+a region crossing discontinuity.  Apparently, we also need to
+request permissions from avatars who have been momentarily
+unseated at the region crossing.  Animations also need to be
+restarted at region crossings.
+
+Created a bullseye texture and applied it to the Bombing target.
+The side and bottom faces were made transparent.
+
+2019 October 12
+
+Added logic to the Bombing target to retrieve the location of
+the collision with llGetPos, convert from region to local
+co-ordinates (ignoring Z offset), and output the distance from
+the centre.  In initial testing with the Great Balls of Fire!
+launcher, the computation of distance appeared to be wonky, but
+after testing by flying above the target it appears it's working
+properly.
+
+Integrated John Nagle's vehicleutils.lsl and regionrx.lsl via
+the Firestorm #include mechanism.  I had to add some global
+definitions from his motorcycledrive.lsl in order to get it to
+compile.  At the moment, the code is integrated, but not
+actually ever called.  I will be cranking it in incrementally.
+
+2019 October 14
+
+Built a working version with regionrx operational.  At the
+moment logging is to the PUBLIC_CHANNEL on local chat, of
+items with priority LOG_NOTE or above.
+
+After experiments, I saw the first failure of the avatar to
+return to the correct seated position after a region crossing.
+This makes sense since regionrx restores the global sit
+position, but we use sit positions on links instead.  I added
+code in the changed() event to, on a CHANGED_REGION, call
+setSitPositions() to reset the pilot and passenger sit
+positions in their respective links.
+
+2019 October 16
+
+Ran the first moderately long-term test of the new code in the
+USS Reprisal rez zone:
+    http://maps.secondlife.com/secondlife/Woodbine/112/121/36
+which a rez zone which allows scripts and vehicles but is not
+premium-only and thus allows my non-premium test avatar to go
+there and ride the passenger seat.  With pilot and passenger
+on board, I took off and flew around for a total of around 40
+minutes, making probably in excess of 60 region crossings.
+As usual, I had to dodge some exclusion zones, but always got
+out before getting shot down.
+
+Most region crossings were around 0.6 to 0.8 seconds, but I
+encountered a couple of doozies, both crossing sims, the first
+18 seconds and the second 24. On some of the crossings there was
+some yaw action on the vehicle, but almost always very modest
+except once when it veered around 30 degrees to port.  This was
+right around when I got an excluded region warning, but I don't
+know if that was related.  I never saw such a yaw with other
+warnings.
+
+After about 20 minutes, I experienced a crossing where the pilot
+(but not passenger) lost seat position.  The incorrect position
+persisted across subsequent region crossings, which was a bit of
+a surprise since we reset the sit position in the pilot seat on
+every crossing.  I landed on a public road (which keeps the
+vehicle from going back to Lost and Found on stand up), stood
+up, and sat back down, which resumed the correct sit position.
+After thinking about this and looking at the pilot's position, I
+wonder whether, instead, what happened was loss of the sit
+animation. I will try adding code to restore the seated avatar
+animation after region crossings and see if that fixes it.
+
+On one crossing, the passenger's hair was slow to arrive and
+when it did, was at the wrong position.  My guess is that the
+vehicle had moved and the co-ordinate transformation for the
+attachment was based on old data.  This cleared up spontaneously
+on the next region crossing.
+
+The flight came to an end on a crossing where the vehicle and
+pilot came across normally but the passenger did not, and after
+35 seconds the crossing timed out, looping and emitting the
+"Waiting for avatar(s)" message every 100 milliseconds.  The
+passenger was actually on the ground in the previous region (I
+think), seemingly stuck in the terrain and unable to walk or fly
+out of it.  The passenger was able to teleport home.  The
+vehicle was frozen: none of the pilot controls worked.  I had
+the pilot stand up and sit again, after which the vehicle flew,
+but continued to issue the "Waiting for avatar(s)" messages over
+and over.  This should get cancelled when the pilot departs the
+vehicle.
+
+Summary and agenda:
+    Try re-establishing sitting avatar animations after
+    avatars arrive after a region crossing.
+
+    Try saving relative position of avatars when an avatar
+    sits and then reset avatar position when avatar arrives
+    after a region crossing.
+
+    Terminate all regionrx activities and shut off its timer
+    when the pilot stands up from the vehicle, even if it's
+    still waiting for other avatars to arrive.
+
+    Turn off waiting for avatar messages after issuing the timeout
+    message and giving up on avatars arriving.
+
+    Perhaps the time to do all of this resetting is when
+    regionrx determines that all of the avatars have arrived.
+    That will avoid potential problems where an avatar
+    arrives before the vehicle.  (I don't know if that's possible,
+    but it's easy to see how that might cause problems with
+    sit positions, animations, etc.)
+
+2019 October 17
+
+When an avatar sits in the pilot seat and we request controls,
+often we'll get a few spurious control inputs even though no
+control keys have been pressed.  We've seen this before on other
+builds and it appears to be generic.  I added logic to ignore
+any control messages received for the first two timer ticks (200
+milliseconds) after an avatar sits on the pilot seat. This seems
+to have solved the problem.  Note that there may be some very
+slight jostling at the moment we set physical mode since if part
+of the vehicle is in contact with the ground or another
+obstacle, it may be bumped to avoid the collision.
+
+Added code to save the pilot's initial sit position and rotation
+in pSit and pRot at the time of the initial sit.  A new "test 1"
+command restores these to see if that will reposition the
+pilot to the correct position after that is lost on a region crossing.
+
+Added a "test 2" command which stops the current sit animation (which
+is saved in a new pAnim variable) and restarts the correct one.  This
+is also to test restoring things after a messy region crossing.
+
+Testing starting at the saved rez zone in Bellisseria.  After
+a number of region crossings, the rocket disappeared from
+the view.  I pressed ESC and the view was restored, but the
+camera position appears to have been lost.  Further, the
+avatar Z position is wrong (too high above rocket body)
+and maybe a bit too far back (not sure).  I tried the
+test 1 to reposition the avatar and it did nothing.  Tried
+test 2 to restart animaton: did nothing.  Crossed another
+several regions including a sim boundary and the
+incorrect sit position persisted.
+
+Tried standing and sitting again, and when I tried the sit
+the rocket disappeared and went back to lost and found.
+Oh well.
+
+Added a "test 3" command to restore sit positions in links. We
+already do this automatically on region crossings, but this
+allows triggering it manually on late arrivals.
+
+Well, that was a complete disaster.  I now have a rocket which,
+when you reset scripts, sits at the proper sit position the
+first time but when you stand up and sit again puts you at
+the wrong position.  This persists until you reset scripts.
+
+I finally figured out the "one sit and done" problem.  I wasn't
+restoring pAnim to the initial value of "sit" when the pilot
+stands up.  This caused the next avatar to sit to try to stop
+the sit_ground animation, which wasn't running.  This resulted
+in both "sit" and "sit_ground" running at the same time, which
+resulted in the incorrect sit position; it had nothing to do
+with the sit target in the link.  So this is a clue to what
+happened the first time with the screwball sit position.
+Somehow we ended up with the "sit" animation running again after
+a region crossing.  I'll have to try unconditionally stopping it
+before putting "sit_ground" back into effect.  Why it took it
+upon itself to start running "sit" after the region crossing is
+an utter enigma.
+
+2019 October 18
+
+Formalised debug/trace output by adding a new trace variable
+controlled by "set trace on/off" in chat.  A new ttawk() function
+only sends its argument to tawk() if trace is true.
+
+We misbehave in the case where the pilot boards then a passenger
+boards, then the pilot departs and the passenger departs. The
+vehicle is left in physical mode.  Need to look closely at this.
+Also, in that case when the pilot departs RegionRX reports:
+    RegionRX 1  RIDERCOUNT     1.000000
+    RegionRX 2  BANLINE  Hit ban line. Stopping. Back out.
+The first is correct, the second isn't.  I think it's getting
+confused by our shutting down the vehicle modes while there's
+still a rider embarked.  A subsequent test confirmed this; there
+is no problem when the pilot dismounts first and the passenger
+second.
+
+2019 October 19
+
+Uploaded the mesh anvil developed in Blender as described
+in the Anvil development log.
+
+2019 October 20
+
+Adjusted the local rotation of the anvil in fire() so that it is
+always dropped with the base down and the pointy end aligned
+with the nose cone.
+
+Added "drop" as a synonym for "fire" in the chat command
+processor.
+
+Made the Anvil object initially non-physical.  This keeps
+it'from interacting with the terrain whilst being edited.  It is
+set physical in its on_rez() event handler, which makes it
+physical when it is actually instantiated when dropped.
+
+Made the Impact marker object phantom.  This will avoid
+embarrassments when we collide with impact markers.  Since
+they are ephemeral and exist only for appearance, this is
+the appropriate setting.
+
+Started work on rationalising pilot and passenger mount and
+dismount logic.  The sit variable was changed from a Boolean
+to the number of avatars seated (always 0, 1, or 2).  We
+detect the case of the passenger sitting after the pilot
+and set new variable passenger to the key of the passenger
+avatar.  We now handle the pilot leaving the vehicle before
+the passenger, although RegionRX still gets confused in this
+case.
+
+Tried allowing the passenger to fly in "dual control" mode.
+Granting the passenger PERMISSION_TAKE_CONTROLS seems to take
+control away from the pilot.
+
+Added logic so that either the pilot or passenger can drop a
+bomb by touching the rocket anywhere while seated.  Touching
+while not seated, of course, sits on the rocket as before.
+
+Previously, we released the bomb directly downward regardless
+of the velocity or the rocket.  This is, of course, highly
+unrealistic.  I added code to obtain the global velocity of
+the rocket with llGetVel() and impart that velocity to the
+bomb at the moment of its release, so it will initially
+move along with the rocket as it begins its fall.  I then
+wasted the better part of an hour trying to figure out why
+my code was doing precisely nothing until I realised it was
+our old nemesis of initial physics status for a newly rezzed
+object.  As happened with the anvil tosser, the velocity
+argument to llRezObject() is sliently ignored ("silently
+ignored" is the theme song of LSL) if the object in the
+inventory does not have physics enabled.  It isn't sufficent
+to set physics mode in its on_rez()--it must be born that way.
+Setting physics in the inventory object fixed the inheritance
+of initial velocity, but in testing we ran squarely into the
+classic problem of "stores separation".  If you're descending
+or moving forward too fast, the bomb will contact the rocket
+body or a tail fin and blow up the rocket, which is suboptimal.
+
+After extensive experimentation, I settled on a set of ad
+hoc parameters which seems to solve "store separation"
+problems for the cases I tested.  We release the anvil 0.8
+metres below the centre of mass of the rocket, which should
+guarantee it clears the nose cone overlap and tail fins in
+level flight.  If we're descending, we give it an initial
+downward kick five times greater than the downward velocity
+so we don't collide with it before gravity accelerates it
+sufficiently to avoid recontact.
+
+2019 October 21
+
+Now that we're using click on the rocket body to drop the
+bomb, I figured I could remove CONTROL_ML_LBUTTON from the
+controls we take, leaving that for a seated avatar.  Nothing
+doing--if you don't take that control in the vehicle, it
+doesn't get passed through to the avatar.  Added acquiring
+that control back in and it works just fine.
+
+Testing with passenger: with passenger on board, either the
+pilot or the passenger can drop the bomb by touching the
+rocket body.  Passenger can throw projectile in mouselook
+mode while on board.
+
+Now let's try having both the pilot and passenger armed
+with anvil tossers.  This works OK, with a couple of
+curiosities.  First of all, when the passenger throws
+an anvil, the bomb drop sound is not played as it is when
+the pilot throws one.  Second, after the pilot stands up,
+the mouselook control to throw the anvil has been lost,
+presumably in the process of the vehicle's taking and
+then releasing it.  The pilot must then detach and re-attach
+the anvil thrower in order for it to work again.  It may
+not be possible to fix this because llReleaseControls()
+always releases all controls obtained by a script and the
+Wiki kindly notes:
+    In some cases, calling llReleaseControls() in one
+    script can affect the controls of other script which
+    has also captured the same control bit on the same agent.
+Yup--we have to take CONTROL_ML_LBUTTON or else it won't work,
+but when our script releases it, it also releases it from the
+putatively independent attachment's script.
+
+2019 October 22
+
+The problem with losing mouselook permission on avatar
+attached objects is not specific to boarding and departing
+vehicles.  If you have a mouselook object attached and leave
+the viewer, then come back later, it will have lost its
+permissions.  Perhaps there is some event we can capture
+which will notify us of such events and permit re-requesting
+mouselook permission.
+
+2020 February 8
+
+Moved RegionRX into a separate script: "Region Crossing".  This
+isolates the code from Animats and also avoids our impending 64
+Kb script size crisis.  The main Flight Control script
+communicates with it via llMessageLinked and the following
+message types, passed via the integer parameter.
+
+    LM_INIT     Initialise vehicle.  String argument passes
+                link number of driver's seat.
+    LM_RESET    Perform llResetScript().
+    LM_STAT     Send status to id argument on PUBLIC_CHANNEL.
+    LM_CHANGED  Handle region change.
+
+The Region Crossing script manages its own timer, starting the
+timer when a driver boards the vehicle and stopping it when the
+driver departs.
+
+Added a new abbrP() function which tests a string argument for
+the presence of an abbreviation at the start.  All commands and
+set variables may now be abbreviated to as few as two
+characters.  For example, "set autopilot altitude n" may be
+entered as "se au al n".
+
+Completed initial implementation of the autopilot.  It's been a
+long time coming, but it now works reasonably well and
+dramatically reduces the workload when making long-distance
+traverses.  To use the autopilot, first set the destination,
+which may be specified as either a location as shown in the
+position bar of a viewer or as an SLUrl:
+
+    set destination Fourmilab Island, Fourmilab (120, 122, 27) - Moderate
+    set destination http://maps.secondlife.com/secondlife/Fourmilab/120/122/28
+
+Then activate the autopilot with:
+
+    set autopilot on
+
+The autopilot will commence a climb to cruising altitude, which
+is initially 45 metres above terrain but may be changed at any
+time with "set autopilot altitude n", turn in the direction of
+the destination, and then begin to fly toward it.  The bearing
+is continually re-evaluated during flight, so if the vehicle
+gets knocked off course due to a region crossing or collision,
+it will be re-established automatically. As the vehicle
+approaches within 100 metres of the destination, thrust is
+reduced so as not to overshoot.  Upon arrival within 3 metres of
+the destination, the the vehicle transitions into auto-land
+mode, and will adjust its altitude to arrive within three metres
+of the altitude specified in the destination.
+
+En route, the vehicle probes the ground below and ahead of its
+path (10, 25, and 50 metres ahead) with terrain following radar
+and adjusts its altitude to maintain the specified cruising
+altitude above terrain.  If it should collide with the ground
+(due, for example, to very steeply rising terrain, it will
+execute an emergency fly-up to avoid the terrain, with the
+automatic steering re-establishing the course if necessary.
+Collision with an obstacle also causes an emergency fly-up
+except when auto-land is active, in which case it disengages the
+autopilot.  Bogus collisions which occur with seated avatars
+during region crossings (because vehicles and avatars cross
+separately, there can be a moment where they're in close
+proximity but the avatar has not yet been re-seated) are
+ignored.
+
+The pilot is free to make control inputs while the autopilot
+is active, for example to avoid or fly around obstacles,
+banned territory, or just for fun.  A manual control input
+suspends the autopilot for ten seconds, after which it
+resumes normal operation.  You can thus fly manually as
+long as you like, then let the autopilot take over ten
+seconds after your last command.  The down arrow key (BACK),
+causes an immediate disengagement of the autopilot except
+when manual flying (initiated by one of the other control
+keys) is in effect.  You can also disengage the autopilot
+with "set autopilot off".
+
+2020 February 9
+
+Removed the LM_CHANGED link message and replaced it with a
+direct changed() event handler within the Region Crossing
+script.  This reduces complexity and overhead and makes that
+script more autonomous and easy to drop into other
+vehicles.
+
+2020 February 10
+
+Added a "set autopilot land" command which causes auto-landing
+to start immediately from the current location.  This may be used
+regardless of whether the autopilot is currently enabled or not.
+
+Added a floating text control panel which shows, updated once a
+second, the current bearing, altitude, and terrain height.  If
+a destination is designated, the range and azimuth to the
+destination are also shown.  The panel is controlled by
+"set panel on/off".  The panel is hidden when no pilot is seated
+on the vehicle.
+
+Added llGetUsername() of pilot and passenger to status.  Added
+physics mode to status.  Added rotation and velocity to status.
+Added parcel name and flags to status.
+
+2020 February 11
+
+Extended "set autopilot land" to accept an optional argument which
+can be "on" to enable autoland, "off" to disable it (the autopilot
+disengages upon arrival at the destination while still at the
+cruising altitude), and "land" to land immediately as before.  If
+no argument is supplied, "land" is assumed.  Disabling autoland will
+be useful for scripts which want to fly via a variety of waypoints.
+
+2020 February 12
+
+To reduce the risk of runaway debug output running into the limit on
+rapid-fire calls on llRegionSayTo() and being gagged until the next
+region restart, I made tawk() check whether it's speaking to the
+owner and, if so, use llOwnerSay() for its output.
+
+Added the seated position and rotation of the pilot and passenger
+to the Status command output.
+
+Added a llAllowInventoryDrop(TRUE) to state_entry so users can drop
+script notecards into the vehicle's inventory even if its modify
+mode has been disabled.
+
+Rationalised messages between the main vehicle script and Region
+Crossing.  All now have mnemonic names beginning with LM_TX_ and
+are in the range starting with 30.  Messages for the Region
+Crossing log are now passed back to the client script with a message
+of LM_RX_LOG, which passes a JSON string consisting of:
+    [ severity, msgtype, msg, val ]
+which allows the main script to decide how to dispose of them (at
+the moment, the list extracted from the JSON is simply sent to
+tawk() with a prefix indicating its origin).
+
+Implemented the first cut of a script facility.  Scripts are stored
+as notecards in the vehicle's inventory and users who do not have
+Modify permission may still drop them into the vehicle.  Script
+commands are:
+
+    set script run <script name>
+        Run the named script from the inventory.  The <script name>
+        may contain spaces.  If a script is currently running, the
+        named script will be queued to run after completion of all
+        currently queued scripts.
+
+    set script stop
+        Stop the running script and any queued scripts.  If the
+        autopilot is engaged, it is disengaged, and you can issue
+        this command by pressing the BACK (down arrow) control key.
+
+    set script list
+        List all scripts available in the inventory.
+
+    set script delete <script name>
+        Delete the named script from the inventory.  Note that this
+        does not apply to LSL scripts, but to vehicle scripts, which
+        are stored as Notecards.
+
+    set script loop
+        Loop and run the current script forever.  The script runs
+        until terminated by "set script stop" or the BACK key while
+        the autopilot is engaged.
+
+Avoid the Balanvi trap via waypoint:
+    secondlife://Oyster/128/128/50
+
+2020 February 13
+
+Rewrote the Status command to assemble the status in one long string
+with new line characters and display it with a single call on tawk().
+This is easier to read and saves script memory by eliminating all those
+individual function calls.
+
+Location behind castle to test collision recovery.
+    http://maps.secondlife.com/secondlife/Fourmilab/41/34/27
+
+Improved automatic collision recovery when the autopilot is engaged.
+When a collision occurs, we now send control inputs of CONTROL_UP and
+CONTROL_BACK with a new CONTROL_COLLISION bit set overrides the autoDz
+proportional control of Z thrust and increases climb thrust equivalent
+to ten manual up control inputs. In addition, we only report the first
+collision with a given object so we don't run the risk of blithering
+which might trigger the dreaded llRegionSayTo() gag.
+
+Implemented a major upgrade to terrain following, with the intent of
+permitting nearly hands-off navigation on long journeys.  The existing
+look-down terrain following using llGround() and llWater() at various
+ranges has been moved from the Flight Control script to a new Terrain
+Following script (buying a little script memory breathing room in the
+process) and augmented by a mechanism that uses llCastRay() to look for
+obstacles in our path.  If it detects obstacles, it will then project
+rays at successively greater angles to the zenith until one clears all
+obstacles.  It then takes the altitude of the highest collision at the
+previous altitude and, if greater than the down-looking terrain
+evaluation, sets it as the terrain estimation.  With a little (well,
+actually, a lot) of experimentation and tuning of the parameters, this
+seems to do an excellent job of avoiding skyscrapers, gloomy castles,
+skyboxes, and other obstacles on my test itineraries.  This requires no
+user interaction: it is automatically enabled whenever the autopilot is
+in control, and it detects not only terrain but physical and
+nonphysical (but not phantom) objects in our path.
+
+My so far endless and futile quest to figure out what happens when,
+after a region crossing, the avatar position and camera location go
+all weird just took another enigmatic turn.  I ran into another mystery
+unseat and, as before, observed using my diagnostic code that when
+retrieving PRIM_POS_LOCAL of the avatar as a link on the vehicle it is
+absolutely correct: exactly where it was when it was first seated.
+Trying to restore it to this position does nothing.  But, noting that it's
+floating around one metre too high, if I correct the position (with a
+"test" command which lets me twiddle it), the avatar moves to the proper
+location but then the Status command reports its local position as one
+metre lower than before.  It's as if the avatar's centre position has
+been changed, or else the vehicle root prim's centre position, from which
+PRIM_POS_LOCAL is measured, has been changed.  This only affects the
+seated avatar: all other links of the vehicle are right where they
+were before.
+
+The other wild and crazy phenomenon is what I'm tentatively calling
+"omega gone wild", although I don't know if that's an accurate
+description of the cause.  After a long voyage, and without any
+obvious cause, the vehicle and seated avatar starts to tumble in
+space at an enormous angular rate.  It still responds to control
+keys and chat commands, but, of course, cannot be navigated.  If you
+stand, it stops the tumble, at whatever orientation it had when the
+avatar stood, and the avatar behaves normally.  But if the avatar sits
+on the vehicle again, it immediately resumes the wild tumble.  I'm
+going to add PRIM_OMEGA to the vehicle Status command to see if that's
+what's happening when it happens again and also add a "test 3" to
+reset omega to see if that stops the wild gyrations.  At this point
+I have no idea what is happening.
+
+After further experimentation, I believe the "omega gone wild" problem
+is a viewer bug, but I haven't been able to establish whether it
+happens only in Firefox or also afflicts the Second Life Viewer.  After
+some time (I had the viewer active around six hours), you will get the
+"omega gone wild" event even on the most anodyne traverses.  When it
+happens, you'll see vehicle prim omega at <0,0,0>, 0, 0 and resetting
+it to zero does nothing.  When I killed and restarted the viewer, I did
+not see anything like this bug in the same traverses which provoked it
+reliably before.
+
+I think I'm going to have to do some testing on the standard Second
+Life viewer to see if these problems occur on both viewers.
+
+2020 February 14
+
+Brainstorm: maybe what's happening with the loss of avatar position
+is that somehow the animation is getting lost in the transfer to the
+new region.  Now, the actual animation in effect is the same but if,
+for example, it thought that the avatar was now standing, that might
+affect its centre of gravity (or whatever you call it), which would
+cause its relative position with respect to the vehicle to now be
+incorrect.  Will have to monitor animation lists and see if they
+change when an avatar does the levitation trick.
+
+Maybe when controls go dead after a region crossing we've lost
+PERMISSION_TAKE_CONTROLS.  Have Status display permissions,
+try re-taking controls if we've lost it.
+
+2020 February 15
+
+We were getting close to the memory limit on the Flight Control script
+so I broke out the Status command into a new Vehicle Auxiliary script.
+Flight Control calls this to print the status, passing everything it
+needs via a JSON string argument.
+
+Added display of current script permissions and granting agent to the
+Status display.
+
+Added display of the current animation name and animation key list for
+both pilot and passenger to the Status display.
+
+Moved vehicle initialisation from Flight Control to the Vehicle
+Auxiliary script to save memory.
+
+After a loss of sit position during a flight over Wilderness Point,
+status showed:
+    Position: Wilderness Point <132.36990, 223.02390, 72.38662>
+    Rotation: <89.99953, 76.15538, -89.99953>
+    Velocity: <0.00000, 0.00000, 0.00000>
+    Parcel: Protected Land  Flags 908066827 +ENTRYGRP
+    Physics: 1
+    Omega: <0.000000, 0.000000, 0.000000>, 0.000000, 0.000000
+    Pilot: fourmilab  afb35dd4-5669-4ff5-a55d-7e93f7f14ca2  Pos <-1.20155, -0.07276, 0.28725>  Rot <1.53074, -1.50273, 1.53385>
+      Animation: Sitting
+        1.  5869d062-0342-3140-4557-37bb1f7f7b4f ?
+        2.  7628df3c-3d8c-8c60-ea63-62ed3336271d ?
+        3.  795a7686-98cb-5dec-ef9b-0fb5c8810f5b ?
+        4.  9153bff9-b40b-b8a3-848c-be8c51abd893 ?
+        5.  ecc4a233-0a1c-aa81-8b78-0fa11b6dcf2e ?
+             Abs pos <132.63140, 222.88460, 73.58817> Distance 1.237551
+    Permissions: 20 +CTL +ANIM granted by afb35dd4-5669-4ff5-a55d-7e93f7f14ca2
+    Flight control script memory.  Free: 7552  Used: 57984 (88%)
+    Vehicle auxiliary script memory.  Free: 48052  Used: 17484 (27%)
+The avatar was floating above the rocket as usual after such events.  I
+entered "test 4 sit_ground" and the seat position was re-established.
+All this does is a llStartAnimation() with the specified argument.  I
+did not have to re-request permissions with "test 5" before doing this.
+    Position: Wilderness Point <132.36990, 223.02390, 72.38662>
+    Rotation: <89.99953, 76.15538, -89.99953>
+    Velocity: <0.00000, 0.00000, 0.00000>
+    Parcel: Protected Land  Flags 908066827 +ENTRYGRP
+    Physics: 1
+    Omega: <0.000000, 0.000000, 0.000000>, 0.000000, 0.000000
+    Pilot: fourmilab  afb35dd4-5669-4ff5-a55d-7e93f7f14ca2  Pos <-1.20155, -0.07276, 0.28725>  Rot <1.53074, -1.50273, 1.53385>
+      Animation: Sitting
+        1.  1c7600d6-661f-b87b-efe2-d7421eb93c86 "sit_ground"
+        2.  5869d062-0342-3140-4557-37bb1f7f7b4f (1 before)
+        3.  795a7686-98cb-5dec-ef9b-0fb5c8810f5b (3 before)
+        4.  9153bff9-b40b-b8a3-848c-be8c51abd893 (4 before)
+        5.  ecc4a233-0a1c-aa81-8b78-0fa11b6dcf2e (5 before)
+             Abs pos <132.63140, 222.88460, 73.58817> Distance 1.237551
+    Permissions: 20 +CTL +ANIM granted by afb35dd4-5669-4ff5-a55d-7e93f7f14ca2
+    Flight control script memory.  Free: 7552  Used: 57396 (88%)
+    Vehicle auxiliary script memory.  Free: 47954  Used: 17582 (27%)
+Note that, as we've seen consistently, neither the local or region
+co-ordinates of the avatar changed.  Note that llGetAnimation() reported
+Sitting both before and after I reset the animation.  The animation
+list when I first sit on the vehicle is:
+      Animation: Sitting
+        1.  1c7600d6-661f-b87b-efe2-d7421eb93c86 "sit_ground"
+        2.  5869d062-0342-3140-4557-37bb1f7f7b4f
+        3.  7628df3c-3d8c-8c60-ea63-62ed3336271d ?
+        4.  795a7686-98cb-5dec-ef9b-0fb5c8810f5b
+        5.  9153bff9-b40b-b8a3-848c-be8c51abd893
+        6.  ecc4a233-0a1c-aa81-8b78-0fa11b6dcf2e
+
+I think I've learned enough from this to deal with two of the major
+remaining problems with region crossings: loss of avatar animation and
+loss of control permissions.  I've added code which, after every region
+crossing changed() event in Flight Control, compares the list of pilot
+animations from llGetAnimationList() from those when the pilot
+originally sat down and, if we've lost the primary animation, restores
+it.  We also re-request the control permissions which, despite
+llGetPermissions() saying we have them, we actually don't. On the first
+attempt to make a round-trip from Backhill to Denby, these worked
+perfectly, but, of course, since it's Second Life, a great deal more
+testing will be required to smoke out flakiness and timing problems in
+region crossings.  I still haven't really established that the loss of
+animation and the loss of control permissions are related.  If the are,
+that's great--I can just re-request permissions after I detect the
+animation has been lost.  Otherwise, I'll have to use another strategy,
+yet to be determined, to re-request permissions.  Worst case would be
+to do it on every region crossing, which might actually not be that
+bad.
+
+When we have an unseat and lose the animation, we also lose camera
+position.  I have, at present, no way to detect this nor any solution
+to restore it.  We use sit positions on links, and there doesn't appear
+to be any way to get the information you need to restore camera position
+for them.  This is an open item which may require looking at going back
+to top-level sit positions and cameras on the root prim (which would be
+very ugly).
+
+2020 February 16
+
+A guide to airways, waypoints, and routes in Second Life:
+    https://sl-aviation.fandom.com/wiki/Airway,_Route_%26_Waypoint
+Waypoints:
+    https://sl-aviation.fandom.com/wiki/WAYPOINTS_SBNCG
+Routes:
+    https://sl-aviation.fandom.com/wiki/ROUTES_SBNCG
+Aviation Home:
+    https://sl-aviation.fandom.com/wiki/Second_Life_Aviation_Wiki
+    You can find airports on various continents from here.
+
+Experimenting with restoring camera position.  If I request and
+obtain the PERMISSION_CONTROL_CAMERA, I can then use
+llClearCameraParams() and llSetCameraParams() to set the
+camera position for the avatar for which I've obtained
+the permissions.  I added such code in the "test 7" command
+to try restoring the pilot's camera.
+
+After a vehicle destruction event that leaves the avatar not
+responding to motion inputs, try sitting and then standing.  That seems
+to restore them.
+
+Added a downward-looking ray-casting probe to Terrain Following to
+detect non ground or water objects directly beneath us.  This will
+avoid embarrassement when operating from airports floating in the
+air or heliports atop high buildings.  The downward ray cast ignores
+hits from Ground.  A little tweaking was required to keep it from
+hitting the vehicle itself when descending rapidly.
+
+2020 February 17
+
+Tried not taking PERMISSION_CONTROL_CAMERA by default and, indeed, it
+seems to get rid of the jerkiness in following motion.  My guess is
+that the jerkiness is due to the interposition of the script and camera
+tracking, which is normally handled in the viewer.  This means that
+taking over the camera after position has been lost has a cost.  The
+question is whether it's worse than a screwball canera position abd
+whether there's any other way to cure the problem.
+
+2020 February 23
+
+Well, I had another whacked-out unseat and loss of control even after
+leaving the vehicle, where the back and forward and up and down control
+keys worked, but left and right did not.  Sitting and standing up did
+not cure the problem, nor did teleporting to another region.  This time
+I teleported to Fourmilab Mid-island, got on a horse, dismounted, and
+that fixed it.
+
+2020 February 27
+
+One more screwball condition to fix: flying with a passenger and the
+passenger's viewer crashed.  The passenger thus disappeared, and this
+was interpreted as failure by the passenger to cross the region, and
+we looped waiting for the passenger to arrive.  Need to see if we get
+some kind of useful changed event when this happens (like link changed)
+and mark the passenger gone so we don't loop.  May be able to test
+just by having the passenger stand up while en route.
+
+2020 February 28
+
+If the "Set volume" command was used to turn engine sound on or off 
+while a pilot was seated, setting volume to 0 stopped the sound but 
+setting it back to a positive value did not re-start the engine sound 
+loop.  I added logic so both transitions work correctly with a pilot 
+seated.
+
+During the wild perturbations following a turbulent region crossing,
+it is possible for our ray casting to detect parts of the vehicle
+itself.  In Terrain Following, I added a test of the root object of
+detections against the vehicle's own key and ignore any such
+self-detections.
+
+Handling of cases where a destination, intermediate or final, was at
+an altitude greater than the cruising altitude plus terrain was inept.
+I modified the logic to that after arrival within autoRangeTolerance
+of the destination in the X-Y plane, if we're below the destination
+altitude, a new autoFlyUp flag is set which causes the up/down inputs
+to target the destination altitude rather than the cruising altitude
+and to ignore terrain height.  (Actually, we add autoAltTolerance to
+the target altitude so the altitude dead band doesn't keep us from
+reaching or exceeding it.)
+
+Added two new Set commands:
+    set auto tolerance altitude <n>
+    set auto tolerance range <n>
+which specify the tolerance (dead band) within which the autopilot
+will try to maintain the cruising altitude en route and how close
+it must get to the destination to decide it has arrived.  Both
+default to 3 metres.  Setting the range tolerance to a larger value,
+say 10 metres, can dramatically speed up the course transitions at
+waypoints.  There's usually no reason for great precision when
+changing course at a waypoint, so all of the fine tuning required
+to home in on the target is wasted.  Set the range tolerance high
+en route among waypoints, then set to a small value before the last
+leg leading to the ultimate destination.
+
+Began implementation of the SAM Sites module with the addition of the 
+eponymous script.  The Flight Control script hands off "Set SAM" 
+commands to it, which it processes to manage the list of SAM sites.  
+There is substantial duplication between Flight Control and SAM Sites, 
+but that's what comes of the inane 64 Kb memory limit on LSL scripts.  
+In particular, all of the code for parsing location specifications on 
+the grid and obtaining global co-ordinates is duplicated.  So it goes.
+
+2020 March 2
+
+Completed the initial implementation of the SAM Sites module.  This is 
+in a separate SAM Sites script and controlled by "Set SAM" commands 
+which are forwarded by the main Flight Control script to the SAM Sites 
+script for processing.  After processing the command, that script 
+replies with a LM_SA_COMPLETE link message containing a status of TRUE 
+(command processed successfully) or FALSE (error in command or 
+processing it). If the command requires an asynchronous operation (for 
+example looking up grid co-ordinates of a SLUrl), the reply will be 
+deferred until the request completes.  A script in process is suspended 
+until the complete message is received.
+
+The SAM Sites module processes the following commands:
+
+    Set SAM site ["label"] radius altitude location/SLUrl
+        Define a SAM site with an optional quoted label (one
+        or more words), a threat radius and altitude, and
+        location specified as with "Set destination".  This
+        adds the site to a list of those to avoided.
+
+    Set SAM list
+        List the current SAM sites.
+
+    Set SAM delete n/all
+        Delete the numbered SAM site (numbers from the list
+        command) or all sites.
+
+    Set SAM range n
+        Set the range at which SAM sites are considered threats.
+        Even if a site is directly along the trajectory to the
+        current destination, it is not considered a threat if
+        further away than this setting.  Default is 1024 metres.
+
+    Set SAM trace on/off
+        Enable or disable detailed tracing of SAM threat probes.
+        This generates a lot of output which is generally only
+        of interest to developers.
+
+    Set SAM threats
+        Show detailed information for the most recent SAM threat
+        probe.
+
+When one or more SAM sites are defined, SAM threat analysis is 
+activated and operates in one of two modes depending upon whether the 
+autopilot is engaged.  In manual flight mode, SAM detection is 
+advisory: if a SAM threat is detected along the current flight path and 
+within the specified detection range, a "SAM warning" will appear on 
+the pilot's floating text control panel giving the label of the closest 
+threat site and its range; it's up to the pilot to see that avoid the 
+threat. When the autopilot is active, an intermediate waypoint will be 
+computed which avoids the threat radius around the SAM site with the 
+least diversion from a direct course to the destination.  After flying 
+to that point, and with the SAM site now behind the vehicle, a direct 
+course to the destination from the divert point will be reinstated.  
+The pilot's panel will show a "SAM divert" in effect during the flight 
+to the waypoint and disappear after it is passed.
+
+Added logic so an invalid "Set SAM" command aborts an in-progress
+script.   Note that we still don't do this for invalid script commands
+processed directly in the Flight Control script.
+
+Nota bene: the SAM Sites script contains a very nice function called 
+ef(), which elides redundant trailing zeroes and decimal points from 
+any floating point numbers in the string argument it is passed.  This 
+may be applied in other scripts which have the room for the function.
+
+Did some experimentation with GTFO, trying to use the VAPI code for an 
+existing registered vehicle with our own.  Every attempt, no matter how 
+sneaky I was, ended up with:
+     GTFO! Hud v1.8.3 TRIAL - LIVE server: API ERROR - DATABASE DOES
+        NOT HAVE AN ENTRY FOR <VAPI I used>.
+My guess is that it's checking the creator ID of the object containing
+the GTFO script and VAPI object and rejecting if not that registered
+in the database.  Changing the name of the object, owner of the VAPI
+object, etc. doesn't work.  So, I guess we're stuck.  As best I can
+determine, the GTFO powers that be haven't issued any new VAPIs in
+response to requests for VAPIs for months, and if you sign up on their
+    https://forums.sl-gtfo.com/
+you aren't even allowed to post on the "VAPI requested by Creator" 
+forum to request one, so it appears the opacity is complete.  They 
+clearly aren't interested in increasing their vehicle creator and user 
+base, and I'm not going to waste any more time on it until they get 
+their act together.
+
+Tried the Denby Direct mission with a passenger on board.  The outbound 
+mission and arrival worked fine.  During the return the passenger was 
+unseated and dropped into the drink in the old region.  This put the 
+vehicle into the:
+    RegionRX: 2, CROSSSLOW, Waiting for avatar(s) to cross regions., 0.000000
+loop from which no recovery was possible (and I tried lots of things). 
+I think we need to time out on this and concede we've lost the 
+passenger and KBO.
+
+Fixed script processing in Flight Control so that all command errors 
+cause active scripts to be terminated, which is confirmed by a "Script 
+terminated." message.
+
+For testing ban line encounters, try:
+    http://maps.secondlife.com/secondlife/Vallone/208/184/35
+starting from:
+    http://maps.secondlife.com/secondlife/Vallone/209/19/36
+This is a clear-cut ban line within a region.
+
+Perhaps use llGetParcelFlags():
+    http://wiki.secondlife.com/wiki/LlGetParcelFlags
+to look ahead in direction of travel and detect ban lines.  Mark
+these as temporary SAM sites and remove when behind us.  See also
+llGetParcelDetails().  This will avoid running into ban lines and
+the need to recover or catastrophes when we don't.
+
+2020 March 3
+
+Changed default cruising altitude above terrain to 120 metres.  This
+should better avoid vertically-limited ban lines better than the
+previous default of 45 metres.
+
+I finally figured out a sneaky way to test GTFO without obtaining a 
+VAPI code for the vehicle.  It turns out that, as I guessed yesterday, 
+the VAPI is locked to the UUID of the creator of the object (not the 
+owner, so vehicles can be sold and still work).  I bought an 
+inexpensive full permissions flying vehicle which has a VAPI assigned 
+to it, then unlinked all of the pieces except one which was a simple 
+prim.  I deleted all of its content except for the GTFO API script and 
+GTFO!<VAPI> objects, then redefined the prim to have the properties of 
+the root prim of the rocket (the yellow rocket body cylinder).  I then 
+installed copies of all of our vehicle's content in it.  I then made a 
+copy of the rocket, unlinked the root prim, and linked the remaining 
+pieces to the replacement root prim, which continued to have the 
+creator ID of the original plane.  Originally, nothing worked, until I 
+figured out I had to take the resulting frankenrocket into the 
+inventory and rez a new copy.  Then things worked, more or less.
+
+The first problem was that the camera position was all screwball.  This 
+was the old gotcha where another script had set a prim-level camera 
+position and look-at point, which becomes a prim property and persists 
+until cancelled by a subsequent call with an argument of ZERO_VECTOR. I 
+added such calls to the state_entry() event and now the camera more or 
+less behaved.  The camera position was still wrong, however, since I 
+had cleverly inserted the replacement root prim with its local Z axis 
+flipped 180 degrees with respect to the old, so I had to painfully 
+re-adjust the camera position to compensate. Next, the rocket kept 
+falling to Earth.  This turned out to be due to the original prim's 
+gravity having been set, for some reason, to 1.3, making it behave as 
+if it were on a rocky super-Earth. I changed this back to 1.0 and that 
+fixed the problem.
+
+Now, it worked and I took it to Riff Airport and successfully made two 
+cargo runs.  When specifying destinations, GTFO uses the other form of 
+SLUrl, which looks like:
+    secondlife://Oyster/128/128/50
+I modified the parseDestination() function, which occurs in both the 
+Flight Control and SAM Sites scripts, to also accept SLUrls in this 
+form.
+
+The GTFO HUD sends no link message while it's loading cargo.  So far,
+I don't see any way for a script to determine loading or unloading is
+in progress and, say, open a cargo door on the vehicle.
+
+2020 March 4
+
+Performed a long-needed and major restructuring of the "Flight Control" 
+script, whose lineage dates back to the original Ratburg Air Sky Barge 
+of early 2019.  It was originally a monolithic script which included 
+all vehicle functions, and as things grew it was constantly tottering 
+on the edge of the (absurd) 64 Kb limit on script heap+stack size.  As 
+the complexity of the rocket project grew, I moved functionality out 
+into other scripts and added new functionality in separate scripts, but 
+there was always something needed in Flight Control which pushed it 
+right to the brink.
+
+The restructuring replaces Flight Control entirely with two separate
+scripts named "Vehicle Management" and "Pilotage".  The division of
+responsibility between the scripts is as follows.
+    Vehicle Management
+        Vehicle initialisation and mode settings
+        Local chat command processing
+        Interface with Script Processor to run scripted commands
+        Parsing destination specifications (location or SLUrl)
+        Region look-ups for destination specifications
+        
+    Pilotage
+        Setting vehicle modes when pilot or passenger board or leave
+        Obtaining and responding to control keys for manual flight
+        Autopilot operation driven by the timer
+        Responding to advisories from Terrain Following and SAM Sites
+        Handling collisions with objects and terrain
+        Auto-land
+        Dropping bombs
+        Making smoke when flying
+        Recovery from lost animation and permissions on region change
+
+After the restructuring, script memory usage is as follows:
+    Vehicle Management          59%
+    Pilotage                    61%
+    Region Crossing             34%
+    Vehicle Auxiliary           27%
+    Script Processor            14%
+    Terrain Following           19%
+    SAM Sites                   54%
+Hence, the division of labour between Vehicle Management and Pilotage
+was almost ideal, leaving both around the same size.
+
+2020 March 5
+
+Added a:
+    Set thrust horizontal/vertical/x/z n
+command to set thrust levels.  Added thrust settings to the Status 
+command output.  The default thrusts are 20 horizontal and 15 vertical. 
+Running a long distance mission with horizontal thrust set to, say, 
+120, is an excellent way to provoke region crossing catastrophes.
+The specifications x and y are synonymous with horizontal and vertical
+respectively; all may be abbreviated to the first letter.
+
+Added the ef() function to the Vehicle Auxiliary script and used it to
+make the Status output more readable.
+
+Revised the ef() function so that it requires a substring to contain
+at least two digits and exactly one decimal point to be considered a
+floating point number it should process.  Note that using ef() on a
+very long string may take almost forever due to LSL inefficiency and
+garbage collection overhead.  It's much faster to call ef() on each
+number, even though all of those function calls chew up your heap
+space.
+
+Had another weird episode where after completing a successful five leg
+circular journey and then leaving the vehicle, I had lost the left and
+right navigation key control of the avatar.  Forward and back worked
+fine.  It's like maybe even after releasing the controls (which the
+vehicle does when the pilot departs), some stayed attached to the (now
+departed) vehicle.  Sitting and standing did not fix this, nor did
+teleporting to another region.  Another inscrutability to unscrew.
+
+Here's the voyage which provoked this problem.
+    secondlife://Meighen/131/178/178            Riff Airport
+    secondlife://Schell/85/99/107               Southern Schell Airport
+    secondlife://Cavanaugh/170/12/107           Debbie's Paradise
+    secondlife://Yelas/131/53/57                Yorkshire Land AP
+    secondlife://Meighen/127/128/179            Riff Airport
+I made this with a passenger, and everything worked just fine until
+the arrival when the navigation keys went wonky.
+
+2020 March 6
+
+The documentation for llLoopSound() says that if you try to change
+the volume by a subsequent call, it will be ignored, and that you have
+to call llStopSound() immediately before in order for the volume
+change to take effect.  I added such a call in the Set volume handler
+but it still doesn't seem to do anything.  At the moment I'm baffled.
+Perhaps it's because we started the looping sound in a different
+script: Pilotage.  I'll have to experiment with this.
+
+Added statistics to the Pilotage status output: distance flown, number 
+of regions crossed, destinations reached under autopilot command, auto 
+lands, collisions with objects and terrain, SAM site diverts, and 
+anvils dropped.  The statistics are reset when a new pilot boards
+the rocket and persist after the pilot departs.
+
+Our recovery from loss of animation on un-seat deosn't appear to work
+when using the Wile W. Coyote avatar.  It may be that our tests for
+loss of animation assume there are animations in place for the regular
+mesh avatar which aren't there for this very simple avatar.
+
+2020 March 7
+
+Created a Collision_boing sound from the Soundeffects+ clip:
+    https://www.soundeffectsplus.com/product/comical-boing-02/
+and maintained in the rocket/sounds/43134177_comical-boing-02 directory 
+of the Git repository.  The original clip was trimmed, faded at the 
+end, mixed down from stereo to mono, normalised, and resampled as 44.1 
+kHz 16 bit signed PCM .wav format with Audacity.  I changed the 
+initialisation code in Vehicle Management to set this clip instead of 
+disabling collision sounds.  The big advantage of allowing the viewer 
+to handle collision sounds directly is that it knows how to mix them 
+with sound from other prims, so you don't have to worry about the 
+collision sound stopping the engine loop sound, for example, or play 
+games playing the sound from another linked prim.
+
+Reorganised the logic in the collision() handler in Pilotage so that
+it detects genuine collisions in both manual piloting and autopilot
+modes.  This allows us to report what we collided with to the pilot
+and count collisions in the statistics regardless of who was in control
+at the time.
+
+Added logic to Pilotage to enable collision counting and sound only
+when a pilot is seated.  Otherwise, we'd make the collision sound and
+increment collisions if, say, somebody walked into the rocket when it
+was idle on the ground.
+
+With the move of permissions request and granting the Pilotage
+script, the Status display of permissions sent by Vehicle Management
+to Vehicle Auxiliary returned void results because permissions belong
+to a script and it no longer had requested them.  I delete the old
+code to show permissions and moved it to the LM_PI_STAT message handler
+in Pilotage.  Note that if Pilotage becomes tight on memory, all of
+this can be moved out to Vehicle Auxiliary as we did with the
+Vehicle Management script back when it was called Flight Control.
+
+Distance travelled was not computed in manual flight mode; fixed.
+
+Added code in Pilotage to track "flight time" (mission elapsed time): 
+the time since the pilot sat on the vehicle, and compute mean speed 
+from it and distance travelled.  When the pilot departs, the flight 
+time is frozen at the time of departure and reset when another pilot 
+sits in the seat.  These statistics can be used for closed course and 
+point to point races.
+
+Performing an llDie() on the vehicle after an unrecoverable un-sit was
+a pretty dire move, which completely destroys the vehicle, including
+any content the user may have added in its inventory or changes to the
+scripts.  I replaced it with an llReturnObjectsByID() in the Region
+crossing script to try to return the vehicle to the owner's Lost And
+Found folder.  Since this circumstance happens infrequently and cannot
+be produced on demand, we'll have to wait and see whether it works and
+is a better solution.
+
+Researching loss of control permissions while flying.
+    In script error window:
+        Script trying to stop animations but PERMISSION_TRIGGER_ANIMATION permission not set
+    Pilotage status:
+        Permissions: 0 granted by 00000000-0020-0000-0c00-000002300000
+    Prior to loss of control:
+        Permissions: 20 +CTL +ANIM granted by afb35dd4-5669-4ff5-a55d-7e93f7f14ca2
+        This is my avatar; I have no idea what the other thing is.
+This is a total loss of control keys.  Try sitting on ground.  Sit works.
+Stand works, but control keys still lost.  Try sitting on rocket.  Status
+then shows:
+        Permissions: 20 +CTL +ANIM granted by afb35dd4-5669-4ff5-a55d-7e93f7f14ca2
+and nav keys works on rocket.  Leave rocket and navigation keys are restored.
+Note that this is fine as long as you still have the rocket, but if it's
+lost, that doesn't work to get the keys back.  However, the status display
+does indicate we can detect loss of permissions, so we may be able to
+restore them.
+
+After a normal flight, if I query status, I see:
+        Permissions: 16 +ANIM granted by afb35dd4-5669-4ff5-a55d-7e93f7f14ca2
+Why do we see ANIM permissions remaining after departing the vehicle.
+OK, +CTL is revoked because we did a llReleaseControls(), which cancels
+it.
+
+On a test run, I encountered an unrecoverable unseat and the return
+of the vehicle to Lost And Found appeared to work OK.
+
+2020 March 8
+
+Added a regionEdge() function to Pilotage which takes a position and 
+direction vector and returns a list containing the distance to the 
+closest region edge and a string indicating the compass cardinal point 
+of the edge as a single letter.   This is displayed in Pilotage status
+and will be used in experiments to slow down around region crossings.
+The function could be expanded to detect approaching crossings near
+region corners and divert to make them more orthogonal.
+
+Added a regCorner() function to Pilotage which takes a direction
+vector and returns the angle to the closest corner of the region.
+The result will always be an angle between 0 and PI/4.  This will
+be used to monitor approaches to crossings at region corners and
+possibly divert make the crossings more orthogonal, avoiding the
+perils of crossing multiple regions at once.
+
+Added logic to the timer() event in Pilotage which, when the autopilot 
+is active, suppresses CONTROL_FWD events when regionEdge() reports 
+we're closer than a threshold to a region crossing, which is presently 
+arbitrarily set to 25 metres.  This appears to be the breakthrough for 
+which we've been waiting!  I flew from the houseboat to Denby, back to 
+Animats Getaway, and then on to the houseboat without a single upset or 
+disaster.  I did, on several occasions, encounter stalls at region 
+crossings where the suppression of CONTROL_FWD caused the vehicle to 
+stop.  I will have to experiment with either reducing the threshold 
+where we throttle back before a region crossing or else enforce a 
+miniumum velocity when approaching a region crossing.
+
+Note that this is all based upon regionEdge().  We have not yet used
+regCorner() to deal with crossing region corners.
+
+Based on a number of “real” world tests, slowing down across region
+crossings is the magic bullet we've been seeking.  I made a run from
+Backhill to Denby, then to Reed's Farm, and back to Backhill with no
+problems other than the need to kick the vehicle across region crossings,
+which we can easily fix in the autopilot.  I then made a number of GTFO
+deliveries, including one across 19 regions and everything went
+tickety-boo,
+
+I will have to see if, in addition, slowing further or diverting near
+corner crossings further reduces calamities on region crossings.
+
+The strategy should be to suppress CONTROL_FWD inputs when near
+a region crossing, but only if velocity is less than a threshold
+value which is considered safe.  This may depend on how close we
+are to a region corner.
+
+2020 March 9
+
+Added display of the current velocity in metres/second to the Status 
+display.
+
+Modified generation of the Range item in the floating text control 
+panel in Pilotage to always show the range to the currently set 
+destination even if a SAM divert is active.  The range to the SAM 
+waypoint is already shown in the SAM diver/warning status line.
+
+2020 March 10
+
+Added a quadrant() function in Pilotage which, given a direction 
+vector, returns, as a list, an index indicating which region corner is
+the closest:
+    0   Indeterminate
+    1   Northeast
+    2   Southeast
+    3   Southwest
+    4   Northwest
+and a vector giving the region co-ordinates of the proximate corner.
+This is displayed in the Pilotage statistics.  This will be used to
+establish a temporary SAM divert to avoid crossing region boundaries
+at corners, which is bad juju.
+
+Added corner quadrant display to the Pilotage Status output.
+
+One downside of using system collision sounds is that you get the
+sound for those bogus “collisions” which occur between the vehicle
+and the pilot or passenger as things bounce around during a turbulent
+region crossing.  The only way to prevent this would be to generate
+the sound ourselves in our collision() event where we can distinguish
+genuine from bogus collision.  But then we wouldn't be able to mix the
+collision sound with the engine sound loop.  A work-around might be to
+place a script in another link whose only purpose is to play the
+collision sound.  When a genuine collision is detected, a link message
+is sent which tells that script to play the collision sound.
+
+The process of aborting a script due to an error in the script or other 
+exogenous event is asynchronous to the completion of a pending 
+llGetNotecardLine() request.  That means it's possible the dataserver() 
+event in Script Processor may be invoked, receiving data for a script 
+which has been terminated while the request was pending. If that's the 
+case ncBusy will be FALSE and we don't want to request the next line, 
+which will fail because ncSource will have been cleared.
+
+SAM divert count in Pilotage status was still incorrect--shows 0 after 
+a divert has been started and completed.  Basically, the way we were 
+counting SAM diverts was utterly wrong.  I replaced the logic in 
+Pilotage with code that declares a divert only when we receive a divert 
+advisory from SAM Sites when one is not in effect.  Since SAM Sites may 
+update the advisory a number of times before clearing it, we only want 
+to count the first.  When the advisory is removed, that resets divert 
+in progress so that the next advisory will increment the count again.
+
+Implemented the foundation for diverting around region crossings too
+close to a corner of four regions, which drastically increases the
+probability of calamity.  In timer() event of Pilotage, which is the
+heart of the autopilot, I added a check using regionEdge() and
+regCorner() to see if our trajectory will take us closer than
+CORNER_THREAT metres (currently set to 25) of a four corners point.
+If so, we proceed to plot divert points from the current position
+to either side of the threat radius, choose the one which causes the
+smallest diversion from the course to the destination.
+
+2020 March 11
+
+Added a new Sounds script to the Nosecone object linked into the rocket 
+(which also serves as the placeholder for the pilot seat, but that's 
+irrelevant to the script).  This script will play sounds stored in its 
+link, which may be started with a call like:
+    llMessageLinked(lSaddle, LM_SO_PLAY, "1, Collision_boing", agent);
+where the string argument consists of a volume specification and the 
+name of the sound clip, separated by a comma.  The key argument is 
+ignored and may be NULL_KEY if you prefer; here we're passing the 
+pilot's key.  The advantage of using this script is that it may be used 
+to play sounds which are mixed with the engine sound loop.  If the 
+Pilotage script were to play a sound directly, it would interrupt the 
+loop which would then have to be restarted with a timer or some such, 
+which would be messy.
+
+Changed the Pilotage script to set the llCollisionSound() to silent and 
+call the Sound script to play collision sounds for object and terrain 
+collisions.
+
+When you get a terrain collision, you're likely to get a whole lot of 
+them in rapid-fire succession.  This triggers the collision sound over 
+and over and makes a machine gun effect and can cause the sound rate 
+throttling error message to pop up.  I added logic to land_collision() 
+in Pilotage to only report land collisions every two seconds or so, 
+ignoring intermediate collisions.
+
+Completed the implementation of diversion around region corner 
+crossings. In the timer() event of Pilotage when the autopilot is 
+engaged, if our path takes us within autoRegionCorner (currently set to 
+2 degrees) of the vector to the closest region corner, and we're 
+currently throttling down for a region crossing, a divert path is 
+plotted to avoid crossing the region boundary no closer than 
+CORNER_THREAT metres (currently set to 25 metres).  The divert which is 
+closest to the desired course is selected, and then the vector to it is 
+intersected with the adjacent region edges to find the desired safe 
+region crossing point.  This is then stored in the vector 
+cornerDivertPos and autoCornerDivert is set.  While this is set, the 
+autopilot will divert to the plotted edge crossing point.  After the 
+region boundary is crossed, autoCornerDivert is cleared and the 
+previous course (either direct to the destination or an in-progress SAM 
+site divert) is resumed.  A region corner divert takes precedence over 
+a SAM site divert.
+
+While a region corner divert is active, the floating text control panel 
+will show:
+    Corner divert to <Region> <coords>
+The Pilotage status shows the number of corner diverts completed and 
+the closest region edge to the current path, the angle of the current 
+bearing to the closest region corner, and the corner's quadrant ("NE", 
+"SW, etc.).
+
+When rezzing a new rocket from the inventory, we've had an intermittent 
+problem where a user sits on the rocket for the first time and it falls 
+over and fails to respond to the control keys (the fins and nozzle 
+move, but no motion occurs). My guess is that breaking up vehicle 
+initialisation among the various scripts caused things to be done in 
+the wrong order and for the vehicle initialisation not to have been 
+completed before the object was set to be physical.  I added a call to 
+LM_VX_INIT in Vehicle Auxiliary to the vehicleInit() function in 
+Vehicle Management, which is called in its state_entry() event so that 
+the vehicle parameters are reset whenever this script is reset.  I'm 
+not sure if this is a complete solution to these upset events, but I 
+haven't had one since installing the fix.
+
+2020 March 12
+
+I have now made two attempts to run the Airport Tour script.  On both
+occasions, on the second leg, from:
+    set destination secondlife://Schell/85/99/107
+    set destination secondlife://Cavanaugh/170/12/107
+Region Crossing goes into a loop reporting:
+    RegionRX: 2, CROSSSLOW, Waiting for avatar(s) to cross regions., 0.000000
+    Avatar out of position: -1.000000m from vehicle.
+    Avatar link to root is wrong.
+    Fourmilab Resident: Avatar link to root:   Veh. root: 14083934-16db-86e1-5883-c628834c478f
+this continues as the flight proceeds to the destination.  What is
+completely bizarre is that if, after landing, I depart the vehicle, the
+messages continue to appear, while departure of the pilot should
+completely shut down the Region Crossing timer.  Now, veering into the
+Twilight Zone, if I then reset all the scripts in the rocket, they still
+continue!  Surpassing the Outer Limits, if I delete the rocket, they
+still keep on coming.  They seem to stop spontaneously some minutes
+later, with no message either in local chat or a pop-up about something
+being returned to inventory or Lost And Found.
+
+It almost seems like a region crossing caused the rocket to be
+duplicated, with one left in the sending region which then starts
+blithering to the owner, while the second continued on normally.  I
+have never seen anything like this before, but this has now repeated
+two times in a row on this same leg.
+
+Made a third run and at the moment of the region crossing from
+Calvet to Gun the messages started again.  Closer examination
+of the messages revealed the messages were in a format I had
+changed, and hence had to have come from an older version of
+the rocket than the one I was flying.  So, it appears that on
+some earlier expedition, a rocket had been separated fron its
+avatar and orphaned--not deleted or returned to Lost and Found.
+I clicked on the object ID in the local chat, and it reported:
+    secondlife:///app/objectim/14083934-16db-86e1-5883-c628834c478f/?name=Fourmilab%20ACME%20Rocket%3A%20Fourmilab%20Resident&owner=afb35dd4-5669-4ff5-a55d-7e93f7f14ca2&slurl=Calvet%2F0%2F0%2F0
+If I try to teleport to Calvet/0/0/0 I find myself at the bottom of the
+ocean at an altitude of 15 metres and unable to see the rocket.  The
+Build/Pathfinding/Region Objeects does not work here, reporting "No pathfinding
+linksets".
+
+Next, I discovered that if, simply as a flying avatar without any
+vehicle at all, I simply fly somewhere near the Calvet/Gun
+region crossing, for example:
+    http://maps.secondlife.com/secondlife/Calvet/192/239/95
+    http://maps.secondlife.com/secondlife/Gun/188/28/95
+the messages start up agan from the orphaned rocket.
+
+Even though the rocket is able to blither to me, it does not
+seem to respond to local chat commands on either the current
+channel of 99 or the old one of 2958.
+
+Submitted a support ticket:
+    https://lindenlab.freshdesk.com/support/tickets/1494411
+as follows:
+    Some days ago I was testing a rocket flying vehicle I am developing 
+    and experienced a region crossing disaster in this vicinity.  I 
+    lost the rocket and the avatar fell to the ground, and I assumed 
+    that, as has happened before, the vehicle had been returned to Lost 
+    And Found.  But apparently, it was somehow orphaned in the vicinity 
+    of the region crossing and if my avatar returns to that location, I 
+    receive llOwnerSay() output from the vehicle.  If I request the 
+    SLUrl of the sender, I get:
+    secondlife:///app/objectim/14083934-16db-86e1-5883-c628834c478f/?name=Fourmilab%20ACME%20Rocket%3A%20Fourmilab%20Resident&owner=afb35dd4-5669-4ff5-a55d-7e93f7f14ca2&slurl=Calvet%2F0%2F0%2F0
+
+    If I try to teleport to Calvet/0/0/0, I find myself on the sea 
+    bottom at a Z altitude of 15 metres, so I can't see if the rocket 
+    is actually beneath the sea bottom.  Build/Pathfinding/Region 
+    Objects in the area reports "No pathfinding linksets.".  The object 
+    does not respond to commands sent on its channel via local chat, 
+    even if shouted.
+
+    Would it be possible for you, given the UUID and location from the 
+    SLUrl cited above, to delete this orphaned object?  The larger 
+    question is, of course, how it became orphaned in a region crossing 
+    in the first place, as it is an object marked as owned by me in a 
+    location where I am not allowed to rez objects.  But if you could 
+    just get rid of it, it would solve the immediate problem and 
+    eliminate this bit of clutter.
+
+To clear the navigation beacon on the Map, click the red arrow shown
+in world.  There is supposed to be a Clear button on the map, but
+at least in Firestorm there isn't one.
+
+2020 March 13
+
+Created a Collision_scrape sound from the Soundeffects+ clip:
+    https://www.soundeffectsplus.com/product/ice-scraper-01/
+and maintained in the rocket/sounds/39196522_ice-scraper-01 of the Git 
+repository.  The original clip was trimmed, faded at the end, mixed 
+down from stereo to mono, normalised, and resampled as 44.1 kHz 16 bit 
+signed PCM .wav format with Audacity.
+
+Replaced the Collision_boing sound for land_collision() events with 
+Collision_scrape.  Added a preload of Collision_scrape when a pilot 
+sits on the rocket in Pilotage.
+
+When a passenger departs, there will be frequently be a flurry of
+collisions reported between the vehicle and the former passenger.
+I added code to save the UUID of the departing passenger in a key
+variable exPassenger.  If the key reported for the collision is
+the ex-passenger, we ignore the collision just as we do with the bogus
+collisions with seated pilot and passenger during region crosssing.
+exPassenger is reset when the pilot sits or departs, and when a new
+passenger sits.  I may add a timer to reset it after, say, ten seconds
+after a passenger departs but I think the present logic is sufficient.
+
+We've had an intermittent phenomenon where when the pilot departs the 
+vehicle we get a pop-up to permit the vehicle to animate the pilot's 
+avatar.  If you permit it, the pilot sits down on the ground and the 
+only way to recover is to sit on the vehicle again and then depart. In 
+tracking this down, this occurs when the code in the timer() event 
+detects the pilot has lost permissions and attempts to reclaim them. 
+This can apparently happen after the pilot stands up.  I confirmed with 
+diagnostic code that when this occurs sit is still set to 1, indicating 
+the script still thinks the pilot is seated.  My guess, which I have 
+not yet been able to confirm with further diagnostic code, is that 
+we're getting the timer() event before we receive the changed() event 
+informing us of the pilot's departure.  I added diagnostic code to 
+display the llAvatarOnLinkSitTarget(lPilot) when we detect lost 
+permissions.  I'm hoping it will report NULL_KEY, which will allow us 
+to detect this condition and skip trying to reclaim permissions.  So 
+far, it hasn't happened since I added this debug code.
+
+Cleaned up and rationalised the code for a passenger sitting and
+departing.  This will properly start the sit animation for the
+passenger and save the animation so it can be restored if lost on
+a region crossing.  This required adjusting the sit position to
+compensate for the sit_ground animation.
+
+Flew a three-leg 38 region round-trip mission from Riff Airport with
+a passenger and then back to the houseboat with no disasters.  Shortly
+departing (I think on the first region crossing, but I haven't confirmed
+this), the passenger's animation would be lost and return to the default
+sit animation.  This is probably due to bobbling permissions among
+the pilot and passenger.  I will have to investigate this in controlled
+conditions with instrumentation.
+
+At the end of the long mission, my trap for the permission request
+after the pilot stands.  The debug message was:
+    Lost permissions: reclaiming.  Sit 1  sitLinkPilot: 9
+        AOLST: 00000000-0000-0000-0000-000000000000
+AOLST is an abbreviation for llAvatarOnLinkSitTarget(), which indicates
+we can use its result being NULL_KEY to avoid making the permission
+request after the pilot stands up.
+
+Tried a short run from the houseboat, logging permission events.
+    Pilot sits
+        Requesting pilot permissions: 20
+        RegionRX: 1, DRIVERKEY, afb35dd4-5669-4ff5-a55d-7e93f7f14ca2, 0.000000
+    Passenger sits
+        Requesting passenger permissions: 2064
+        Lost permissions: reclaiming.  Sit 2  sitLinkPilot: 9
+            AOLST: afb35dd4-5669-4ff5-a55d-7e93f7f14ca2
+        RegionRX: 1, RIDERCOUNT, , 2.000000
+        Requesting pilot permissions: 20
+        RegionRX: 1, SITTER, on prim #8 :KelvinThroop Resident distance to seat, 1.245619
+At this point both avatars are seated, and both have the correct 
+animation.  At the very first region crossing, the passenger's animation
+is lost and the default animation restored.  This was exactly repeatable
+on two experiments.
+
+Added code in the Pilotage time() event to skip reclaiming permissions
+for the pilot if we detect that the pilot has departed by the
+result for llAvatarOnLinkSitTarget(lPilot) being NULL_KEY.  This
+should avoid the occasional permissions pop-up when the pilot departs
+the vehicle.
+
+2020 March 14
+
+Completely rewrote how passenger sit and stand work.  It turns out that
+when a script requests permissions from an agent (avatar), they are
+granted to that script from the avatar, but you cannot have permissions
+from more than one avatar at a time.  For a vehicle which may want to
+obtain permissions to change animations, camera position, and grab
+controls from a pilot and passenger, for example, and which may need to
+restore them if they're lost in a region crossing, this is a hideous
+mess.
+
+I moved all handling of permissions for the passenger into a new
+Passenger script, which the Pilotage script invokes with a link
+message when a passenger sits or stands.  The Passenger script obtains
+the needed permissions for the passenger avatar, local to itself,
+and performs the desired operations.  It has its own changed() event
+handler and watches for region changes and, for each, re-tests its
+permissions and the active animations.  If they've been disturbed by
+the region crossing, they are restored.
+
+This structure appears to work fine for our case of a single passenger, 
+but it scales poorly for more than one passenger, as it would require a 
+separate script for each seat in the vehicle.  Since the 
+run_time_permissions() event doesn't tell you which avatar granted you 
+the permissions, it would seem like trying to handle more than one 
+seated avatar in a single script would be an invitation to timing 
+problems if, for example, multiple avatars simultaneously lost their 
+animations on a single region crossing.
+
+Experienced repeated crashes of Firestorm.  It turns out that Firefox
+(its Firebuddy) had bloated to fill all of RAM and sprawling out
+into the swap file.  I killed it, and recovered around 50 Gb of RAM.
+After that, Firestorm crashed a couple more times, but I think that
+was the crashes in Backhill when the draw distance is set too high.
+I reduced it from 240 m to 108 metres and it hasn't crashed since.
+
+2020 March 15
+
+The first thing that pops into one's mind is that maybe we can get 
+around all of these lost animation headaches by applying our desired 
+sit animation as an llSetAnimationOverride() to the existing "Sitting" 
+animation.  But once again, there's the Second Life bodkin to the 
+heart: while PERMISSION_TRIGGER_ANIMATION is granted automatically to a 
+seated avatar, PERMISSION_OVERRIDE_ANIMATIONS pops up a dialogue the 
+user must confirm, which is unacceptable.  Onward.
+
+One huge insight due to pure hackery experimentation.  This "loss of 
+animation region change" is, at least in part, a *viewer* issue, not 
+something we can directly address in a server-side script.  I commented 
+out all of yesterday's hackery in the Passenger script and replaced it 
+with a simple start animation of "sit-ground" for the passenger.  On 
+most region crossings, the animation is not lost when viewed from 
+Firestorm running the pilot.  But sometimes it is.  I then re-enabled 
+the region change logic and simple stopped and restarted the 
+"sit_ground" animation for every region change.  You still get the 
+"loss of animation" sometimes, but it will eventually correct.  
+However, when you view this from a copy of Second Life Viewer running 
+on another machine which is running the passenger, there is no 
+disruption to the passenger's animation at all: the passenger continues 
+to sit there running the correct animation.
+
+Indeed, the Second Life Viewer seems to handle this so much better 
+(running on a slower machine with less memory), and never having a 
+problem with either the pilot or the passenger's animation, that I'm 
+beginning to think this may be a Firestorm bug or design limitation in 
+handling avatar animations across region changes.
+
+Based upon these experiments and discoveries, I decided to take a step
+back and abandon trying to impose our sit_ground animation on the
+passenger.  It just causes too much trouble (at least with Firestorm),
+and all of the work-arounds have side-effects which are worse than
+the original problem and introduce additional fragility.  I pulled the
+code to start the animation from Passenger entirely and adjusted the
+sit position for the passenger to work with the default "sit" animation.
+(Note that if the avatar has previously overridden this, the sit position
+may be wrong and there's no way we can discover how to adjust it, but
+that's [Second] life.)  At the moment this leaves the Passenger script
+with absolutely nothing to do, but I left it and its plumbing in Pilotage
+in place, as we may need it later when we directly attack loss of camera
+position on region crossings.
+
+Made collision and ground collision sounds respect the Set volume 
+setting, including suppressing them entirely if volume is set to 0.
+
+To avoid untoward blithering, added logic to the collision() event in 
+Pilotage which, similar to that in land_collision() only reports, 
+counts, and plays the collision sound once per second for repeated 
+collisions with the same object.  This avoids the 
+"boingity-boing-boing-boing" we previously experienced, especially when 
+landing on objects other than the ground.  Repeated collisions are 
+still used by the autopilot, however, to command fly-ups.
+
+Made a new test script notecard, Riffraff, which is a round trip
+from the houseboat to Riff Airport.  Flew this trip with a passenger
+and nothing at all went wrong.
+
+If Set trace is set to off, messages from Region Crossing will be
+displayed in Local Chat only they have a severity of 3 (LOG_ERROR)
+or 4 (LOG_FAULT).  Note that at the moment lower priority messages
+are still generated and sent as link messages; eventually we'll
+pass the trace level to Region Crossing to suppress their generation.
+
+Extended the Set trace command to accept a number as well as off
+(0) and on (1).  Numbers greater than 1 can be used to enable
+increasingly detailed and nerdy debug output.  The Set trace command
+now sends a new LM_VM_TRACE message (113) with a single JSON argument
+giving the new trace level, which allows other scripts to set their own
+internal trace variables.  The initial trace setting is sent to other
+scripts at state_entry() time.
+
+Added logic to Region Crossing to receive LM_VM_TRACE and set its
+debug level to LOG_DEBUG (trace > 0) or LOG_ERR (trace == 0).
+
+Added support for LM_VM_TRACE to Pilotage and rationalised 
+communications in local chat.  If a pilot is seated on the vehicle, 
+communications via tawk() go to the pilot, otherwise to the owner.  In 
+any case, if we're sending a message to the owner, llOwnerSay() is used 
+instead of llRegionSayTo() to avoid the risk of running into the region 
+throttling gag.
+
+Added a ttawk() function to Pilotage which only sends the message if 
+trace is set. Changed all explicit llOwnerSay() debug output to ttawk() 
+calls.
+
+Added a LM_PI_PILOT (27) message to Pilotage which informs other scripts
+when a pilot sits on the vehicle or stands.  The pilot's key is passed
+in the id argument on a sit, and NULL_KEY on a stand.
+
+Integrated the tawk()/ttawk() and LM_VM_TRACE mechanism in the
+Terrain Following script and converted all llOwnerSay() calls to use
+tawk() or ttawk().  When a pilot is seated, terrain following trace
+messages will now be sent to the pilot rather than the owner.
+
+Integrated tawk()/ttawk() and LM_VM_TRACE into SAM Sites. SAM Sites 
+needs a more complicated tawk() than the other scripts because it 
+processes commands.  When processing a command, it will set whoDat as 
+the destination.  Otherwise, messages go to agent if a pilot is seated 
+and owner otherwise.
+
+Built a non-GTFO rocket body to swap out with the kludge GTFO rocket 
+body.  As this is the root prim, it is named "Fourmilab ACME Rocket" 
+with a description of Non-GTFO rocket body.  I built this on the 
+Greensward.  Stored a copy in the Inventory under:
+    Rocket/GTFO Experiments/Non-GTFO Components/Fourmilab ACME Rocket
+This will be swapped in for the kludge body when preparing the rocket 
+for the Marketplace.  I put nothing in the inventory, as it will be
+filled with the latest version of all of the scripts and notecards when
+the Marketplace version is assembled.
+
+2020 March 16
+
+Added an Echo command in Vehicle Management to echo arbitrary text to 
+local chat.  This is primarily intended for scripts to communicate what 
+they're doing to the user.
+
+Implemented a proper command echo facility in ProcessCommand() in 
+Vehicle Management.  If echo is set, the command is echoed to the 
+submitter's local chat, prefixed with ">>" if entered from chat and 
+"++" if from a script.  Echoing of a command may be suppressed by 
+prefixing it with "@".  A new Set echo command (not to be confused with 
+the Echo command) allows echoing to be enabled or disabled.
+
+Integrated the onOff() function to provide better diagnostics for 
+on/off commands.
+
+Added the ability in Set trace to specify a trace level as an integer
+for more extended trace output than "on", which is equivalent to
+Set trace 1.
+
+Added proper trace output to Script Processing to report script start,
+end, and abnormal termination operations.
+
+Implemented true nested script execution in Script Processing.  Before, 
+if a script invoked another script, it was placed on a queue to be run 
+after the end of the invoking script.  Now the calling script is pushed 
+on a stack, the called script run, and when it completes, the calling 
+script resumes at the line after the call.  Script calls may be nested 
+to any level, limited only by script memory.  An error in a script 
+aborts that script and any outer level scripts.  Use Set trace level 5 
+and above to see the details of script nesting.  True script nesting is 
+very handy when, for example, you wish to load a script containing a 
+list of SAM sites before starting a multi-leg mission defined in a 
+script.
+
+Replaced the legacy mechanism of handling sits and unsits by the pilot
+and passenger in Pilotage with logic in the changed() event which treats
+each entirely independently.  This eliminates the "sit" variable, which
+was the source of much confusion and led to the problems when the pilot
+stood with a passenger still on board and then sat again with the
+passenger still in place.  Everything is now driven based upon the
+presence or absence of an avatar on the pilot and passenger's seat, and
+the previous presence or absence.  The only interaction is that built
+into the handling of linked objects with sit targets on links: that
+clicking on the link set fills the targets in the order of link numbers.
+This means that the first avatar to sit on the rocket body will be
+the pilot and the second will be the passenger.  It is, however, possible
+to sit directly in the passenger seat by clicking the nosecone, where
+we've hidden it (although if you do so, the camera position goes all
+screwy, which I'll have to look into).  This seems to have cured all
+of the problems relating to who boards and departs in which order.
+
+Region Crossing was starting its analysis timer if the passenger was 
+first to sit on the vehicle.  This caused to interpret the lack of 
+STATUS_PHYSICS has hitting a ban line, whenceforth we wandered deep 
+into the weeds.  I added code in handlechanged() to start the timer 
+(which activates the region crossing analysis) only if an avatar is 
+seated on the DRIVER_SEAT_LINK.  Conversely, we stop the timer when the 
+sitter count goes to zero or the DRIVER_SEAT_LINK is vacant.  I think 
+this explains the intermittent "2, BANLINE, Hit ban line. Stopping. 
+Back out." message we've been getting when departing the vehicle.
+
+To debug passenger departing, I added a Test 1 command to llUnSit the
+passenger.
+
+Tried ejecting the passenger during a Tour mission: no problems.
+
+Tried having the pilot stand up during a Tour mission.  There were
+no obvious problems, but I think that having the pilot depart should
+terminate a running script.
+
+After fixing a pilot stand up to terminate a running script, I
+tried the pilot's bailing out during the Tour script.  That went
+fine, the script terminated, and the passenger was left on the
+rocket with Physics off in mid-air.  When the pilot sat on the
+rocket again, everything started up fine, but the camera position
+was screwy again, looking up from below the rocket, almost as
+happens when the passenger boards first.  It appears the next deep
+dive needs to be into camera positions.
+
+2020 March 17
+
+The new logic for starting and stopping the timer in Region Crossing 
+was incorrect.  I changed the code to only start the timer when the 
+pilot seat is occupied and stop it when the pilot stands up.  Since we 
+cannot move or cross regions with only a passenger seated, there is no 
+reason to keep Region Crossing active in that condition.  This fixes
+the problem of getting stuck on the first region crossing.
+
+As regards the failure to detect the pilot sitting the first time after 
+a reset, it is sufficient to reset just the Pilotage script to 
+reproduce the problem.  On one occasion, after a reset, I got the weird 
+boing boing boing of collisions even though I was on open ground at 
+Fourmilab Island with no other objects in the vicinity.
+
+Note that after the pilot sits in this circumstance, which generates no 
+changed() message, the stand does generate a changed(), which leads to 
+the error trying to end the animation which, in fact, we never started 
+because we weren't informed of the sit.
+
+The new logic for handling pilot and passenger sits and stands in 
+Pilotage caused the problem with the first sit of a pilot after the 
+script was reset.  The reason for this was convoluted and arcane, but 
+the fix was simple: fix a backwards test in the passenger sit code 
+which caused the first pilot sit never to be executed. But left things
+a state where a subsequent stand would correct the problem.  I should
+work the first time and every time now.
+
+2020 March 18
+
+Returned to the mysteries of lost camera position.  Added a Test 2 
+command to Vehicle Management which invokes Pilotage with a temporary 
+link message of 901 (I'm not naming these test-only hacks), which, when 
+received, callsll ClearCameraParams() and llSetCameraParams() with an 
+empirically-determined set of parameters which seem to do a pretty good 
+job of reproducing the default behaviour when an avatar sits on the 
+pilot's seat link.  We have to do this inide the Pilotage script beause 
+it has the PERMISSION_CONTROL_CAMERA permission from the pilot and 
+Vehicle Management doesn't.
+
+I flew an extended, multi-leg mission after setting the camera position 
+with this, hoping to lose camera position and see if Test 2 will 
+restore it, but nothing went wrong.  I crossed more than 83 regions, 
+recovered manually from edge of the world conditions, and had no 
+problems. I even had a passenger sit on the rocket for part of the 
+mission, who boarded in-flight.  
+
+Whether setting the camera position this way avoids the loss of camera
+position or it's just teasing me, I have no way to know so far.
+
+Eventually, our other nemesis, the loss of controls hit, and the only 
+way out of that hole required logging out of the viewer and back in 
+again.  This time I had back and forth and up and down, but no left and 
+right, and teleporting, sitting, and resetting animations did nothing 
+to correct it.  I added a Test 3 command to Vehicle Management which 
+sends a 902 message to Pilotage that causes it to re-request all of its 
+permissions, including PERMISSION_TAKE_CONTROLS, 
+PERMISSION_TRIGGER_ANIMATION, and PERMISSION_CONTROL_CAMERA.  We'll 
+have to wait and see if this works to recover control authority when we 
+lose it the next time.
+
+Just when you think it can't get any weirder--it gets weirder.  After a 
+series of legs involving around 45 region crossings, I experienced the 
+classic "loss of control" failure, right at a region crossing. The 
+Status command showed that I was in the new region.  Test 2 and Test 3 
+did nothing to recover the problem.  But here's where it gets really 
+weird (cue "Twilight Zone" music): the Status display showed *nothing* 
+from the Pilotage script.  I finally opened it with Edit/Contents 
+(while still seated on the rocket) and both Running and Mono were 
+unchecked! The other scripts I checked were OK.  When I checked these 
+two boxes, the Pilotage script now reported its status.  But when I 
+then tried Test 3 to restore permissions, I got a pop-up script error 
+which said it couldn't locate the avatar from which I was trying to 
+obtain permissions.
+
+This was probably because after having been restarted, even though an 
+avatar was seated, Pilotage had never seen a changed() event to tell it 
+a pilot was seated.  I tried standing up, but of course my rocket 
+immediately went back to Lost And Found.  I then teleported back to 
+Fourmilab Island, where the avatar was in the usual state of back and 
+forth, up and down working but left and right keys ignored.  This time 
+I tried sitting on a rocket I had there, and doing so fixed everything.  
+All the navigation keys worked both while on the rocket and after 
+standing and leaving it.
+
+Note that there are API calls:
+    llSetScriptState
+        http://wiki.secondlife.com/wiki/LlSetScriptState
+    llResetOtherScript
+        http://wiki.secondlife.com/wiki/LlResetOtherScript
+which are supposed to allow one scrupt to reset another.  Do
+we really want to go down that rabbit hole?
+
+2020 March 19
+
+Added experimental logic to processControl() in Pilotage to try to
+detect the "stuck at the edge of the world" condition when we try to
+enter an area with no sim.  The present criterion is that CONTROL_FWD
+is asserted, either the X or Y axis of the region position is within
+2.5% of the edge of the current region, and the absolute value of the
+velocity vector with respect to the nearby edge is less than 0.2
+metres per second.  At the moment all this does is output a "Stuck!"
+message, but if it proves reliable (perhaps with the addition of a
+time component so transient events are ignored), this may be used to
+alert or try to escape being trapped by a nonexistent sim boundary.
+
+Implemented experimental code in Region Crossing to try to recover from
+losing a passenger at a region crossing without wrecking the vehicle.
+We distinguish loss of passenger from loss of pilot based upon comparison
+of the sitter's UUID with the key of the pilot and, after MAX_CROSSING_TIME
+expires, simply accept the loss of the passenger and keep buggering on.
+
+Changed the time the autopilot is suspended after the last manual
+pilot input from ten to five seconds.  Ten seconds proved too long.
+
+Got a loss of camera position on a region crossing during a long
+mission and Test 2 restored it.  This is the first confirmation this
+works.  Now the question is whether we can detect the loss and
+restore automatically.
+
+2020 March 20
+
+In Pilotage, replaced all calls on llGetUnixTime() with llGetTime(), which
+returns a higher resolution floating point time based on script elapsed
+time.  Since this can run into single precision round-off problems, I
+reset the script time with llResetTime() whenever a new pilot sits on
+the vehicle.  As the timer is only used during a flight, this ensures
+maximum resolution for its duration.   This will provide higher resolution
+for short-term timing events such as handling multiple collisions, whereas
+llGetUnitTime() provided no better than one second resolution.
+
+Further revised the detection of stalls due to running into nonexistent
+sims, which I have come to call "void sims".  The new logic works by
+computing an exponentially smoothed moving average of velocity in the
+direction of the destination and then, if we are near the edge of a
+region and this velocity falls below a threshold indication we're stuck
+and stays there for 5 seconds or more, we declare a stall and notify the
+pilot of it in local chat and on the control panel.  If, during the
+five second grace period we make it through to a new region, resume
+an acceptable velocity toward the target, or make it outside the edge
+of the region, the stall alert is cancelled.  With the current settings,
+I'm seeing essentially no false positives, but I'll have to do more
+testing in demanding situations to be confident the settings do not
+need any more adjustment.
+
+When a stall is detected, all we do is notify the pilot, who can display
+the map, temporarily override the autopilot, and try to find a way
+around the void sim(s).  Since there is no way for a script to access
+the map database, I can't think of any practical way for the autopilot
+to try to plot a path around a hole in the grid.
+
+2020 March 21
+
+Made the camera override for the pilot the default.  It is now done
+every time we request or reclaim permissions.
+
+Updated the master SAMs notecard to include all the SAM sites we've
+encountered on our trips so far.
+
+Performed a round-trip from the houseboat on Denby Mission and return.
+I did this both as a general shakedown cruise and to test with a very
+simple avatar.  I used the Wile E. Coyote avatar, with a complexity of
+just 2340.  Nothing went wrong during the mission.  Statistics are:
+    Distance travelled: 26606 m
+    Flight time: 2026 s  Mean speed: 13.132240 m/s
+    Regions crossed: 110
+    Destinations: 4
+    Landings: 2
+    SAM diverts: 4
+    Corner diverts: 0
+    Collisions:  17 obstacles, 0 terrain
+
+2020 March 22
+
+Cleaned up the Anvil Bomb object, removing its unused local chat user 
+interface and in-flight particle effects.  Made the default colour of 
+impact markers white instead of black.  Removed the in-flight particle 
+system effect, which was unused.  Eliminated the "touch to test" 
+facility. Added code to distinguish terrain collisions from those with 
+objects and, on the former, snap the impact marker to the llGround() 
+height plus a small margin to account for terrain undulations.
+
+Simplified the Impact Marker object, removing code unused in this much
+simpler application than in the Anvil Tosser.
+
+Integrated the logic from the Anvil Toss Projectile into the Anvil Bomb
+so that it detects collisions with a Fourmilab Target and doesn't
+generate its own impact sound, particle effects, or place an impact
+marker, but rather defers those theatrics to the target.
+
+Added support for target hit message reception to Pilotage.  This 
+required a change in the Target, which will ripple back into the Anvil 
+Tosser.  In Anvil Tosser, the target directed its hit messages back to 
+the avatar who threw the projectile, which it knew because the tosser 
+was an attachment to the avatar and hence took on its owner UUID.  The 
+hit message was routed to the avatar and hence was seen by the tosser, 
+which was an attachment.  With an avatar seated on a vehicle, however, 
+this won't work, and the target has no way to determine the UUID of the 
+vehicle which dropped the bomb.  The only alternative is to use 
+llRegionSay() instead of llRegionSayTo() and add the key of the owner 
+of the vehicle to the JSON message sent for the hit.  This allows all 
+projectile launching candidates in the region to see the message and 
+filter those which belong to their owners.  This will require a 
+corresponding change to the Anvil Tosser when this new Target script is 
+integrated into its distribution.
+
+Disabled the code to set a custom animation for the pilot.  This is an 
+experiment to see if disabling this reduces the number of upsets on 
+region crossings.  This certainly seemed to be the case for passengers. 
+On a preliminary test of Denby Mission with the Wile E. avatar, there 
+were no losses of position or camera position.
+
+Made a cargo run from Riff Airport to First Flight International Airport
+at http://maps.secondlife.com/secondlife/Jadu/217/130/32.  This was:
+    Regions crossed 75
+    17,367 metres
+    Mean speed 10.85 m/sec
+Continued onward to:
+    http://maps.secondlife.com/secondlife/Sanggae/84/35/54
+    Regions crossed 89
+    20,228 metres
+    Mean speed 9.08 m/sec
+Dead-headed back to the houseboat:
+    http://maps.secondlife.com/secondlife/Backhill/135/101/22
+with final statistics:
+    Regions crossed 129
+    Destinations 3
+    Landings 3
+    30,535 m
+    10.22 m/sec
+
+2020 March 23
+
+Procedure for replacing GTFO-hacked rocket body with standard rocket 
+body for Marketplace release.
+    1.  Go to Greensward, rez copy of current rocket.
+    2.  Rez Projects/Rocket/GTFO Experiments/
+            Non-GTFO Components/Fourmilab ACME Rocket
+    3.  Set rotation of both to <270, 0, 90> degrees.
+    4.  Edit linked full rocket, select rocket body
+        (link 1, root prim).
+    5.  Note/copy position: <97.41655, 155.70992, 750.59009>.
+    6.  Unlink rocket body.
+    7.  Edit/move out of the way.
+    8.  Paste position in to Non-GTFO rocket body.
+    9.  Uncheck Edit linked.
+   10.  Select any other part of rocket.
+   11.  Shift-select non-GTFO rocket body.
+   12.  Link, making the new rocket body the root prim.
+At this point, you have a full perm rocket with nothing in the root 
+prim inventory.
+
+Copy the items from the inventory of the old rocket body into a tmp 
+folder, then copy to the new rocket body.  Edit the Vehicle Management 
+script to change the default channel to the standard of 2958.  Set the 
+Click action for the linked object to "Sit on object".  At this point, 
+you should have a fully functional shippable rocket.  Add whatever 
+local notecards are needed for testing.
+
+Added number of bombs dropped, and number of hits and total score from 
+the Target to the pilot's control panel.  The line is only displayed if 
+one or more bombs have been dropped.
+
+Added number of hits and total score from Target to "Anvils dropped"
+line in the Pilotage status.
+
+Added a "Set target clear" command to send a "Clear for" command to the 
+target to reset the score for the current pilot.  You can use this 
+command only when a pilot is seated.  This works by Vehicle Management 
+sending a LM_PI_TARGCLR message to Pilotage, which clears its local 
+statistics and sends a "Clear for <agent>" message to the Target, whose 
+command channel is assumed to be the default.
+
+Moved the Pilotage status command output generation to Vehicle 
+Auxiliary. The Pilotage script bundles up all of the numbers and passes 
+them to Vehicle Auxiliary in a LM_VX_PISTAT message via JSON.  This 
+eliminates a great deal of script memory and code from Pilotage, and 
+will allow for nicer formatting of the status output without risking a 
+memory crisis.
+
+Moved the generation and display of the pilot's control panel (floating 
+text) from Pilotage to Vehicle Auxiliary, requested by a LM_VX_PIPANEL 
+link message.
+
+2020 March 24
+
+Made the Access command control who is allowed to fly the vehicle as 
+well as send chat commands to it.  As before, this can be set to Owner, 
+Group, or Public.  Owner is now the default.  If a non-authorised user 
+sits first on the vehicle they get "You are not allowed to fly this 
+vehicle." in local chat and the sit is otherwise ignored.  Handling 
+this required revising how Region Crossing handles changed() events. 
+Previously, it listened independently for these events, but that meant 
+it could not distinguish a permitted from a prohibited pilot sit.  I 
+changed it so Pilotage sends a LM_RX_CHANGED message on changed() 
+events which Region Crossing should process, with the change argument 
+in the str parameter as a string.  This is not sent on invalid sits.
+
+Added a Clear command to sent vertical white space to local chat to
+avoid clutter when debugging.
+
+Disentangled, to some extent, the tortuous logic in the changed()
+event handler in Pilotage which handles sits and stands.  The case
+of an unauthorised avatar trying to sit on the vehicle pushed this
+into a singularity of confusion, as it was not possible to have an
+avatar seated on the pilot's seat who was not, in fact, a pilot and
+did not trigger activation of the vehicle.  I separated the logic that
+handles the pilot and passenger, and no longer assume that when a
+passenger sits we must already have a valid pilot seated and the
+vehicle initialised.  Now, if an invalid pilot sits on the vehicle,
+they are immediately bounced with llUnSit(), which avoids the situation
+of a non-pilot in the seat.  I believe this has resolved all of the
+deleterious interactions with the link change handling in Region
+Crossing, but we'll have to see the results of testing across
+multiple region crossings in different pilot/passenger configurations
+to gain confident this bloodsucker is finally staked.
+
+Added code to the Passenger script to set the camera position for
+the passenger as we do for the pilot.  We'll see if this helps with
+the lost camera position on region crossings as it seems to have for
+the pilot.
+
+2020 March 25
+
+Rewrote the Status, Set SAM list, and Set SAM threats code in Sam Sites 
+to aggregate all of its output into one string which it displays with a 
+single call on tawk().  This makes the output easier to read and 
+disrupts the display with far less circling bubbles.  In the Set SAM 
+list command, I replaced one call on ef() with individual calls wrapped 
+around floats and vectors, which is far more efficient.
+
+Submitting a Set SAM command from local chat while a script was running 
+led to all kinds of confusion.  This is because Set SAM commands, being 
+processed in the Sam Sites module, need to suspend script execution 
+until each completes and, further complicating things, the Set SAM site 
+command performs a region name look-up which requires leaving the 
+script suspended until the query result comes back to the dataserver() 
+event in SAM Sites.  An interleaved real-time Set SAM command from chat 
+barged into this carefully choreographed sequence like a bull in a 
+china shop, messing up the sequencing of script suspension and 
+resumption.
+
+I changed the logic so that Set SAM commands submitted from chat are 
+always processed asynchronously regardless of whether a script is 
+running.  If the Set SAM command came from a script, it activates the 
+script suspend/resume mechanism as before.  I also applied the same 
+logic to the Set destination command, which also requires suspension of 
+a script if it comes from one, but will now be processed asynchronously 
+if submitted from local chat.
+
+Reimplemented the "Test 2" command to re-request all pilot permissions
+and re-establish controls and camera position.  We release controls
+before requesting them back.  Confirmed that this restored camera
+position after a region crossing upset, but I haven't had a loss of
+controls to see if it suffices for that case.
+
+Added a "Test 3" command to restore passenger permissions and camers
+position.  We'll see if this fixes the passenger camera after a
+botched region crossing.
+
+2020 March 26
+
+Began development of a UFO vehicle as a demonstrator of how the generic
+vehicle scripts can be adapted to a variety of different vehicles.
+Chose a UFO flying sound effect from:
+    https://www.soundeffectsplus.com/product/ufo-04/
+        SFX 39725830
+
+Hacked the scripts to disable the fins, nozzle, and smoke.  Replaced
+the start, engine loop, and stop sounds with a simple loop of the UFO
+flying sound.
+
+Built the model.  Installed a transparent cylinder to serve as the root
+prim and pilot seat.  This acts as the cylindrical body of the rocket,
+which is also its root prim.  I installed the Sounds script in the bottom
+of the saucer body.  Adjusted the link look-up code to find the new
+component names.
+
+2020 March 27
+
+Added peripheral lights to the saucer, which chase colours around when
+in flight.  This is handled in a new UFO script, which will contain
+UFO-specific functionality.  The speed at which the lights chase is
+scaled to the velocity of the saucer.
+
+Added a passenger seat behind the pilot seat and adjusted the sit and
+camera position to properly seat the passenger.
+
+Added /* UFO */ and /* !UFO */ comments bracketing code specific to
+the UFO and rocket applications.  This will eventually be used to
+produce both vehicle's code from a common generic code base.  This
+commenting is not at present complete and will need careful testing.
+
+2020 March 28
+
+Handling of pilot sit and stand for the UFO was broken in Region 
+Crossing because there was a hard coded reference to the Tailpipe link 
+as the pilot seat in its state_entry() event.  This was hacked in to 
+correct the case where a changed() event would be received before the 
+LM_RX_INIT message was sent to inform Region Crossing of the link 
+number of the pilot seat. I ripped this out and changed the 
+LM_RX_CHANGED message handler in Pilotage to pass not just the changed 
+flags but also the number of seat links and the the seat link numbers, 
+with the pilot seat first. This guarantees that the pilot seat number 
+will be known before Region Crossing attempts to query if an avatar is 
+seated there, and also removes a dependency on UFO from Region 
+Crossing.  I also modified the code that sends LM_RX_CHANGED in 
+Pilotage to only sent it for CHANGED_REGION and CHANGED_LINK, avoiding 
+sending unnecessary messages for things such as colour changes.
+
+Because Region Crossing operates its own independent timer, it was 
+possible for its timer to fire between the time the pilot stands and 
+the LM_RX_CHANGED message arrived to inform Region Crossing of the 
+change.  This caused a bogus report of BANLINE being hit, because the 
+departure of the pilot turned off physics, and Region Crossing 
+diagnosed that as having hit a ban line.  This set off a cascade of 
+confusion which ended up with physics being enabled after the pilot 
+departed, causing other not-so-funnies.  This was not a UFO problem: 
+we'd seen it before with the rocket, but as it was an intermittent 
+timing problem, never run it down.
+
+We had a bogus sit position in the Dome of the UFO.  I added code to
+clear it, so clicking on the Dome to board now works.  It's easy to
+get these bogus sit positions when you add links to the object and
+forget to reset all of the scripts before setSitPositions() is called.
+
+If a destination was set and the pilot was flying manually, the 
+Velocity item in the pilot control panel would not update.  I added 
+code to show the instantaneous absolute speed when the autopilot is 
+off.  This might be extended to compute the speed toward the 
+destination as we do when the autopilot is on, but this is a better 
+than what we had before.
+
+Adjusted the camera position for the passenger in the Passenger
+script to be compatible with those used for the pilot for UFO.
+
+Reviewed all of the scripts and added control comments to permit 
+automated generation of scripts for either the Rocket or UFO (and, 
+potentially additional flying vehicles in the future) from a common 
+source code base which can be directly tested and developed on either 
+vehicle.  Conditional code is surrounded by multi-line comments like:
+    /* IF UFO
+        ... disabled code ...
+     END UFO */
+or
+    /* IF ROCKET */
+        ... enabled code ...
+    /* END ROCKET */
+The configurator program will recognise these tags and convert them to 
+the enabled or disabled form based on settings in a configuration file.  
+I will provide a clever means to include multi-line comments in blocks 
+within these tags, but as no such code presently exsists, I haven't yet 
+had to invent that scheme.  Configuration will be done by a Perl 
+program which is run something like:
+    perl lslconf.pl config_file  generic_dir  specific_dir
+which will configure scripts in generic_dir according to the settings 
+in the config_file and place them in the specific_dir.
+
+Made the lights on the saucer glow with an intensity which varies
+depending upon the velocity of the saucer.
+
+Initialised the saucer lights to randomly chosen colours in the HSV
+colour gamut and on each shift, shift in a new random colour to chase
+around the periphery.
+
+
+2020 March 29
+
+Added logic in Pilotage, currently enabled only for UFO, which uses
+    llSetVehicleRotationParam(VEHICLE_REFERENCE_FRAME, ...)
+to tilt the vehicle along its principal axis up and down depending on 
+the Z motor setting (just as the nozzle on the rocket tilts, but in the 
+opposite direction).  This makes climbing and descending much more 
+realistic.  I will probably enable this for the Rocket as well, but at 
+the moment I'm debugging on the UFO side and will wait until we have 
+automated generation of both vehicles from a common source base before 
+experimenting with this.
+
+Cleaned up conditional coding for ROCKET and UFO in preparation for the
+grand unificiation of the source code for the two vehicles.
+
+2020 March 30
+
+Test integrated the pich up/down on climb/descend logic into the Rocket
+to see if it broke anything.  It didn't.
+
+Completed the initial development of the LSL configuration Perl 
+program. The program is called lslconf.pl and resides in 
+Rocket/git/vehicle, in which the master code resides in a source 
+subdirectory and a Makefile builds the configured scripts in rocket and 
+ufo subdirectories. The configuration files are rocket.lslc and 
+ufo.lslc.  There are make targets for rocket, lint_rocket, ufo, and 
+lint_ufo.  I did a preliminary audit of the configured scripts against 
+the hand-configured versions and fixed a number of discrepancies, but I 
+will make another careful pass over it before integrating and testing.
+
+Documentation for lslconf.pl is in a comment at the top of the Perl 
+program.  The utility is much more powerful than anything we presently 
+use.  It supports nested IF/END blocks, arbitrary expressions on the IF 
+statement (anything Perl can evaluate), and transformation of block 
+comments within disabled code, none of which we presently used.  I have 
+tested these with a test article, but there may be some problems 
+lurking in them if and when I actually need to use these features.
+
+2020 March 31
+
+Added code to lslconf.pl to detect errors and warnings in evaluating
+configuration file statements and expressions on IF statements, report
+them, and abort the configuration process.
+
+In Pilotage's timer() event, reduced the frequency of updates of total
+distance travelled to once a second (set by updateDistInterval).  There's
+no reason to do this with a granularity of every timer tick.
+
+If the autopilot is off but a destination is specified, the pilot's
+control panel, updated by the timer() event in Pilotage, now computes
+and displays the exponentially smoothed velocity toward the destination,
+as is done with the autopilot engaged.  If no destination is set, the
+simple speed is shown instead in manual flight mode.
+
+2020 April 5
+
+Installed a copy of the regionEdge() function from Pilotage into 
+Terrain Following to dynamically determine tfRange, the maximum range 
+in metres which Terrain Following looks ahead to determine a safe 
+altitude.  The ray casting mechanism we use cannot look outside the 
+current region, so if our current course is close to a region edge, we 
+limit how far we look ahead.  tfRange was previously set to a fix 100 
+metres awaiting the development installation of regionEdge().
+
+The "Set autopilot land" command would fail when the autopilot was not
+engaged because Vehicle Management had its own copy of the agent
+(pilot UUID) variable, but was not updating it when Pilotage processed
+a pilot sit or stand.  Added code to receive the LM_PI_PILOT message
+and update agent when it changes.
+
+Vehicle Management was sending the agent and passenger UUID and link 
+numbers plus the sit count to its status display in Vehicle Auxiliary. 
+It should have no knowledge of such things, which are the 
+responsibility of Pilotage.  I removed the code from Vehicle Management 
+and Auxiliary.
+
+Moved display of pilot status to Pilotage (which sends the information)
+and Vehicle Auxiliary (which receives, formats, and displays it).  This
+replaces the status removed from Vehicle Management, where it doesn't
+belong.
+
+Changed the default command channel for the Rocket to 1633.  This is 
+the date of the supposed human rocket flight by intrepid Ottoman 
+aeronaut Lagâri Hasan Çelebi:
+    https://en.wikipedia.org/wiki/Lag%C3%A2ri_Hasan_%C3%87elebi
+
+In Pilotage, deleted the unused id (requester key) argument from 
+processControl(). This allowed getting rid of some unnecessary calls to 
+llGetKey() in various places.
+
+2020 April 6
+
+Did some experimentation on detection and recovery from loss of camera 
+position.  I added code to Pilotage to save camera position and 
+rotation when set and then display the current position and rotation 
+and deltas from the original settings in the Status command.  
+Basically, detecting by position is hopeless.  When the vehicle is in 
+motion, you will get large discrepancies between the reported camera 
+position and that of the vehicle (or the seated avatar, which I also 
+tried).  I doubt there is any setting which would detect a genuine loss 
+of camera position but would not create lots of false positives when in 
+motion.
+
+Detecting by the angle between the camera's rotation and the vehicle's 
+region-relative rotation seems a lot more promising.  As the vehicle 
+moves and turns normally, delta angles never seem to be as large as 2 
+degrees, while after the camera gets knocked loose by a region 
+crossing, it goes all whack-o.  And in any case, angular displacement 
+is much more jarring that linear displacement along the same angle. 
+Some day I will experiment with automatic recovery of camera position 
+and angle based on detecting angle out of range, but this is not that 
+day.
+
+Made the first cut of the "Control Recovery Amulet".  This is a 
+wearable bracelet intended to facilitate recovery from loss of control 
+situations after a bad region crossing.  The idea is that if you lose 
+the controls, touch the bracelet and it will assume controls, touch 
+again and it will relinquish them.  This is working, but I haven't 
+confirmed that this will actually permit recovery after loss of 
+controls.  I'll just have to wait for the next disaster and see if it 
+works.
+
+2020 April 7
+
+Wore the Control Recovery Amulet on a trip from the houseboat to Denby.
+Upon arrival, I experienced the classic loss of lateral control.  A
+/77 Fix controls fixed everything just fine.  So far, so good.
+
+The Fix animation attempt in the Amulet is able to change the animation
+from sitting to standing, but the state of the avatar remains sitting
+and there doesn't seem any way to change it.  But since when we get
+the whacky animation after a vehicle destruction, our state appears
+to be standing, so maybe this will fix the animation anyway.  I'll have
+to wait until the next incident to try it.
+
+Revised the under-development code to automatically detect and recover
+from loss of camera position.  It turns out that when you set the camera
+position, if you immediately request its position and rotation, it hasn't
+been updated.  I added code to defer the initial query until a decent
+interval (currently 0.25 seconds) has elapsed.
+
+2020 April 8
+
+After further investigation, it appears our scheme to automatically 
+detect and recover from loss of camera position isn't going to work. 
+The problem is that we cannot detect when the camera has been manually 
+repositioned by the user as opposed to its tracking position being lost 
+in a region crossing.  If we were to reset camera tracking every time a 
+discrepancy appeared, this would grab the camera back from the user if 
+they tried to move it, which would be unacceptable.
+
+It might be possible to put in something which snapshotted the camera
+position before and after a region crossing, but then we'd have to
+figure out how to cleanly detect just before a region crossing, which
+can be a mess in the case of near-edge-parallel crossings.
+
+For now, I'm going to reduce the level of ambition here and re-brand 
+the experimental "Test 2" command as "Mend camera".  The user can enter 
+this whenever the camera gets whacked by a region crossing or just to 
+restore tracking after the camera has been manually moved.
+
+To experiment with recovery from loss of vehicle accidents, I added a 
+"Test 999" command which makes the vehicle llDie().  I tried using it 
+in flight, and the avatar landed completely normally on the territory 
+below.  More experiments are in order.
+
+Tested "Mend camera" on a turbulent flight and confirmed that it works 
+for both the pilot and passenger.
+
+2020 April 17
+
+To facilitate testing of complex SAM site evasion scenarios in single
+region sandboxes, I added a new:
+    Set SAM scan
+command.  This scans for all objects within 96 metres (the maximum
+supported by the llSensor() function) of the vehicle, discards any
+pre-existing list of SAM sites, and adds SAM sites for all objects
+returned with names of precisely "SAM site" (case and space sensitive).
+Each is added as within the current region, with its position as the
+co-ordinates, and a label, threat radius, and threat altitude given
+by its Description field as:
+    "Label" radius altitude
+As with the the "Set SAM site" command, if the label is omitted, one
+is synthesised from the region name and co-ordinates within the region.
+(I'd like to get the radius from the properties of the object, but I
+know of no way to query them from the object's key by a script which
+isn't running within the object.)  We assume all SAM site objects are
+non-physical.
+
+This is basically a geeky developer command for testing, but unless we 
+run short of memory in the SAM Sites script, I see no reason not to 
+leave it enabled for everybody, as it's fun to create obstacle courses 
+and see if the vehicle can figure out how to run them, even within a 
+single region (with which anybody with access to a full region sandbox 
+can play).
+
+2020 April 24
+
+Fixed a number of embarrassing flubs in the SAM Sites script
+relating to Second Stage evasion, and now I think it's working
+for at least the simple cases such as multi-site barriers across
+the desired path.  This will need a lot more torture testing in
+difficult cases, however, to be confident it's behaving as
+intended.
+
+2020 April 27
+
+To make it easier to create test cases and encourage people to
+have fun with SAM evasion, created a random SAM Site Deployer
+object.  This is a humble cylinder you can place anywhere you
+like, which listens on channel 75 (from S-75, the Soviet
+designation for the SAM which NATO calls the SA-2 Guideline,
+known for, among other things, shooting down the U-2 in
+1960).
+
+It accepts commands as follows:
+
+    deploy n_sites radius t_rad t_alt height distribution
+        Deploy sites where values are as follows, with defaults in parentheses:
+            n_sites         Number of sites to place (1)
+            radius          Maximum distance in X and Y of sites, metres (10)
+            t_rad           Threat radius of sites (0.1)
+            t_alt           Threat altitude of sites (99)
+                            Value of 0 means 4096 metres
+            height          Displayed height of threat markers (50)
+            distribution    Distribution of sites: (Uniform)
+                                Uniform
+                                Gaussian    Bell curve around centre
+                                Igaussian   Inverse bell curve, sparse at centre
+        
+    remove
+        Remove all sites previously placed, whether in a single or multiple
+        place commands.
+
+In addition the Access, Channel, and Clear utility commands are accepted
+as for the vehicle.
+    
+Sites placed are all named "SAM site" so they will be found by the 
+vehicle's "Set SAM scan" command, and have labels starting with "SAM 
+1".  Sites are shown as semi-transparent cylinders whose tops and sides 
+identify them by number acccording to the resistor colour code.
+
+Note that if you go too wild placing SAM sites within the region,
+you may encounter an out of memory crash in the vehicle's Set SAM
+scan command, as the list of SAM sites is kept as a list in its
+script memory.
+
+2020 May 2
+
+Implemented a new form of destination specification which allows
+selection of a random destination either within the current
+region or within a specified radius of adjacent regions.  You
+can specify a random destination on the Set destination command
+in the following forms:
+    random://region/xl-xh/yl-yh/zl-zh
+where
+    region  If ".", "0", or "", the current region.
+            If a number greater than 0, a location
+            in an area consisting of the current region
+            and that number of adjacent regions.
+    xl-xh   Low and high bounds for X co-ordinate.  If
+            a single number is specified, that fixed
+            co-ordinate.  If blank, a value between 0
+            and 256.
+    yl-yh   Low and high bounds for Y co-ordinate, with
+            defaults as for X.
+    zl-zh   Low and high bounds for Z co-ordinate (altitude).
+            If a single value is specified, that fixed value.
+            If no value specified, a random value between 0
+            and 4096.  If blank, a fixed value of 50 metres.
+
+Choosing random destinations in multi-region areas relies upon
+the Grid Survey API:
+    http://gridsurvey.com/api.php
+which must be accessible via llHTTPRequest() and operating when the
+request is processed.  If the random selection picks grid co-ordinates
+where there is no region (empty, non-simulator space), the random
+choice process will be retried up to five times.  After five failures,
+the Set destination command will be aborted and any in-progress
+script terminated.
+
+2020 May 3
+
+Further development on the SAM site objects placed by the SAM Deployer: 
+collisions now place an Impact Marker at the detected altitiude of the 
+collision with the marker snapped to the surface of the cylinder and 
+rotated tangent to that point.  The location and size of the SAM site 
+are detected on the fly, so if the user has moved or resized the site 
+the marker will still be placed in the correct position.
+
+Added logic to SAM site to send a message on siteChannel (-982449720)
+to the object which collided with the site containing a JSON object:
+    "IMPACT", <posx, posy, posz>, "label"
+where the vector is where the impact marker was placed and label is the 
+quoted label from the site's object description (placed there by the 
+SAM Site Deployer when it rezzes the site.
+
+Added a SAM Deployer icon from:
+    https://game-icons.net/1x1/delapouite/missile-launcher.html
+which is licensed under CC BY 3.0:
+    http://creativecommons.org/licenses/by/3.0/
+by:
+    http://delapouite.com/
+
+When you've deployed a lot of sites with the SAM Deployer and then
+removed them, with Firestorm (I haven't tested with other viewers),
+some may be left as visible objects but in a phantom state.  You can
+walk through them without incident, but if you mouse over and try
+to edit them, they disappear.  This is probably some kind of race
+condition between the server and viewer where the destruction of these
+objects on the server isn't being communicated to the viewer due to the
+number of objects being destroyed at almost the same time.
+
+Implemented several options for vehicle handling of impacts with SAM
+threats reported via the IMPACT mechanism described above.  This is
+controlled via the command:
+    Set SAM impact ignore/warn/disable/eject/explode
+where the options are as follows:
+    ignore      Completely ignore impacts, other than the
+                vehicle's own collision response (default).
+    warn        Issue a warning on local chat, identifying
+                the label of the SAM site with which the
+                vehicle collided.
+    disable     Disable the vehicle.  The engine is stopped,
+                user control is disabled, and motion is
+                halted.  The vehicle remains disabled until
+                the pilot stands and departs the vehicle.
+    eject       The pilot is ejected from the vehicle.  Note
+                that if the vehicle is over land where the owner
+                does not have the right to rez objects, it will
+                probably be returned to Lost and Found.
+    explode     DANGEROUS!  The vehicle is destroyed with llDie(),
+                precipitating the pilot and passenger to whatever
+                is below.  Note that this makes no backup of the
+                vehicle, and you'll have to rez a new vehicle.
+
+These SAM impact options are primarily intended for racing competitions 
+where part of the challenge is avoiding threats placed along the 
+course.  SAM impact only works with co-operating SAM sites which send
+the IMPACT message upon collision.  Such sites are created by the SAM
+Site Deployer and may be placed manually using the SAM Site object
+provided in the distribution.
+
+2020 May 4
+
+The apparent mystery as to why scripts terminated immediately after a 
+Set destination random specifying multiple adjacent regions was simply 
+a wee bit of debug code I overlooked and neglected to remove; fixed.
+
+Implemented a general iterative loop in Script Processor.  You can now 
+specify a loop within a script with:
+    set script loop <n>
+    ... script command ...
+    set script end
+This will loop n times, infinite if n is omitted, executing the 
+commands within the loop/end sequence.  You can nest loops, and call 
+other scripts within loops, although if you mismatch loop and end 
+command across scripts you'll regret it.  You can escape from an 
+infinite loop with the chat command "Set script stop" or, if the 
+autopilot is active, by terminating the autopilot and script with the 
+back arrow key.
+
+2020 May 11
+
+Implemented a new form of destination specification (presently
+only in Vehicle Management, not in SAM Sites, where it isn't
+useful):
+    here://
+This specifies the current region and position.  This will be
+particularly handy in conjunction with what's coming next.
+
+Added the ability to save named destinations.  The commands are:
+    set autopilot mark at <name> <destination>
+    set autopilot mark clear [<name>]   Default all if <name> omitted
+    set autopilot mark list
+Note that you can specify a destination of here:// to save the
+current position.  This is particularly handy in scripts where you
+want to return to the starting point regardless of where the vehicle
+was when the script was run.
+    
+You can use these marked locations in destination specifications
+anywhere a destination is accepted (except for SAM Sites).  For
+example, to fly to a location and then return to the starting point,
+use:
+
+    set autopilot mark at Start here://
+    set autopilot destination secondlife://wherever/x/y/z
+    set autopilot on
+    #   We fly to wherever
+    set autopilot destination mark://Start
+    set autopilot on
+
+2020 May 14
+
+Removed a couple of dummy arguments from the LM_VX_PISTAT message from 
+Pilotage to Vehicle Auxiliary which had been used in one of our 
+experiments with recovering from lost camera position.
+
+Replaced the hammered-in hackery in SAM Sites with a new:
+    Set SAM margin n
+command which specifies the safety margin, in metres, around which the 
+vehicle will evade the threat radius of SAM sites.  This doesn't 
+usually make much difference for large-scale SAM specifications, but 
+when demonstrating evasion of SAM threats within a region can avoid 
+embarrassement.  The default is two metres; increase it for large 
+vehicles.  We might want to allow the vehicle to specify the default 
+when the SAM Sites module is initialised, but that refinement can wait 
+for the moment.
+
+2020 May 16
+
+Added an explosion particle system effect in Sounds to be triggered by 
+an impact report from a SAM site.  The explosion is activated by an 
+LM_SO_FLASH link message, which takes no arguments.  The particle 
+system is automatically cancelled by a timer in Sounds.  Note that 
+since the Sounds script is in the nosecone, we use 
+llLinkParticleSystem() to activate it, which confines it there.  This 
+causes the explosion to occur underneath the UFO, because there the 
+Sounds script is in the bottom hemisphere.
+
+Added code to SAM Sites to trigger the explosion effect on IMPACT
+reports from SAM sites for all impact actions other than "ignore".
+
+Rewrote the listSites() function in SAM Sites to output the line for 
+each SAM site separately with tawk() rather than concatenating them 
+into one long string.  The latter looks better, but if you have a lot 
+of SAM sites active, runs into the 1024 byte limit on the various 
+...Say() functions and gets truncated.
+
+
+
+To Do and Notes
+
+
+(Revoke existing SAM divert when it changes based upon a scan
+while the divert is in progress?)
+
+When encountering insoluble Stage 2 problem, reduce range of scan and
+try to solve only for close sites.
+
+Investigate handling of autoDivertActive in Pilotage.  It should
+be cleared when we arrive at a divert point, but should we
+rely upon SAM Sites to decide this, or use or own arrival
+at the divert point.  Using both invites confusion.
+
+Test SAM divert waypoint behind us and await cancellation without issuing
+additional steering commands toward waypoint.
+
+
+
+
+To improve SAM site evasion, proceed as follows.  Make an initial
+scan of the known SAM sites.  Discard any which are behind us, present
+no threat at our altitude, or are beyond our samRange threat horizon.
+For each site which passes this test, check whether our current
+bearing to the target falls within its threat radius.  If so, proceed
+as present and find the closest threat, but build a table of all of
+the candidate threats, regardless of whether they are on our current
+bearing or not.
+
+Once we've chosen the best divert around the closest threat, now scan 
+all of the threats to see if that that course brings us into the threat 
+sector of another site.  If so, proceed to second stage conflict 
+resolution.  This involves scanning all of the threats identified in 
+the first phase, generating the diverts around either side of each one, 
+then testing those diverts against the remaining threats and discarding 
+those which intersect another threat.  If none is found which does not 
+conflict in the second stage, give up, issue an alert, and hand it off 
+to the pilot.  If one or more non-conflicting diverts are identified, 
+choose that closest to the bearing to the target and set it as the 
+active divert.
+
+
+
+
+
+
+[08:51] Fourmilab ACME Rocket: Fourmilab Resident: Region Crossing: 4, LOSTPASS, Lost passenger after max crossing time., 30.013672
+
+
+[08:53] Fourmilab ACME Rocket: Fourmilab Resident: Stuck.  Velocity 0.000000
+[08:53] Fourmilab ACME Rocket: Fourmilab Resident: Avatar out of position: -1.000000m from vehicle.
+[08:53] Fourmilab ACME Rocket: Fourmilab Resident: Avatar link to root is wrong.
+[08:53] Fourmilab ACME Rocket: Fourmilab Resident: Avatar link to root:   Veh. root: b2aed0b3-0aa3-df57-f969-4494139b4394  Avatar: a10d4bd8-0c7f-4516-8ba9-402675c71992  (KelvinThroop)
+[08:53] Fourmilab ACME Rocket: Fourmilab Resident: Stuck.  Velocity 0.000000
+[08:53] Fourmilab ACME Rocket: Fourmilab Resident: Avatar out of position: -1.000000m from vehicle.
+[08:53] Fourmilab ACME Rocket: Fourmilab Resident: Avatar link to root is wrong.
+[08:53] Fourmilab ACME Rocket: Fourmilab Resident: Avatar link to root:   Veh. root: b2aed0b3-0aa3-df57-f969-4494139b4394  Avatar: a10d4bd8-0c7f-4516-8ba9-402675c71992
+
+
+Test commands to restore vehicle properties, reclaim
+or release controls, adjust camera position, kick off
+passenger.
+
+
+
+secondlife:///app/objectim/b366cc3b-a3b7-0734-136d-0f3d80086e2e/?name=Fourmilab%20ACME%20Rocket%3A%20Fourmilab%20Resident&owner=afb35dd4-5669-4ff5-a55d-7e93f7f14ca2&slurl=Cavanaugh%2F-91%2F1%2F324
+secondlife:///app/objectim/14083934-16db-86e1-5883-c628834c478f/?name=Fourmilab%20ACME%20Rocket%3A%20Fourmilab%20Resident&owner=afb35dd4-5669-4ff5-a55d-7e93f7f14ca2&slurl=Ironjaw%2F0%2F0%2F0
+
+
+
+
+SAM
+set SAM site 256 1024 http://maps.secondlife.com/secondlife/Wixom/128/128/26
+set SAM site 256 1024 secondlife://Titian/135/223/26/
+set SAM site 256 1024 secondlife://Ku/128/128/26/
+
+
+
+On detection of ban line, divert by 90 degrees in random direction for 10 seconds.
+AutoSAM:  Add banned property (as best as we can determine its boundaries) to
+SAM list and save for export to SAM sites notecard.
+
+Stall at Maryport <212.18720, 256.00000, 241.62230>
+         Maryport <239, 255> returned from
+
+List of SAM Sites to evade:
+    http://shergoodaviation.com/radar.php
+
+
+To do:
+
+Loop on:
+    [16:53] Fourmilab ACME Rocket: Fourmilab Resident: Avatar link to root is to avatar itself.
+    [16:53] Fourmilab ACME Rocket: Fourmilab Resident: RegionRX: 2, CROSSSLOW, Waiting for avatar(s) to cross regions., 0.000000
+    [16:53] Fourmilab ACME Rocket: Fourmilab Resident: Avatar out of position: 268.627000m from vehicle.
+    [16:53] Fourmilab ACME Rocket: Fourmilab Resident: Avatar link to root is to avatar itself.
+    [16:53] Fourmilab ACME Rocket: Fourmilab Resident: RegionRX: 2, CROSSSLOW, Waiting for avatar(s) to cross regions., 0.000000
+    [16:53] Fourmilab ACME Rocket: Fourmilab Resident: Avatar out of position: 268.627000m from vehicle.
+Abort and llDie() after too many messages.
+
+
+Pass autoRange to Terrain Following to use as tfRange to limit the
+length of probes.
+
+
+Nagle's suggestions for restoring avatar position after a region
+crossing when the vehicle detects that the avatar(s) have
+arrived after the discontinuity.  See:
+    http://wiki.secondlife.com/wiki/CHANGED_REGION

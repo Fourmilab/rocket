@@ -1,0 +1,11 @@
+
+                    Fourmilab Anvil Bomb
+                       Development Log
+
+2020 February 9
+
+Began development, starting with the current anvil projectile
+from the Anvil Tosser product.  This projectile is compatible
+with the target, but will have to be modified to act as a
+gravity bomb instead of as a thrown projectile.
+

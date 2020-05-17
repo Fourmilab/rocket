@@ -1,0 +1,55 @@
+Fourmilab Rocket for Second Life
+
+Fourmilab Rocket is a cartoon-like rocket flying vehicle for the Second  Life virtual world.  Although deliberately given the appearance of an  ACME product from the Wile E. Coyote and Roadrunner universe, it is a  fully-functional vehicle which can be configured in many ways from  commands in local chat, all of which may be used in scripts stored in  notecards in the vehicle's inventory.  Features include:
+
+        • Seating for a pilot and one passenger
+        • Manual flying via navigation keys
+        • Floating text control panel showing flight information
+        • Comprehensive autopilot allowing long-range missions
+                • Terrain following radar adjusts altitude to avoid
+                   high ground or obstacles in the flight path
+                • Recovery from collisions, automatic fly-up over obstacles
+                • Auto-land upon arrival at the destination
+        • Automatic recovery from many (but not all) upsets after
+           crossing region boundaries
+        • Database of “SAM sites”: threats such as ban lines or
+           no-entry parcels, automatic diversion around threats
+           with autopilot engaged, warning in manual flight
+
+Basic Flight
+
+Rez the rocket from your inventory on land where you're allowed to  create objects.  Note that there are numerous airport hubs for the Get  the Freight Out (GTFO) game which have “rez zones” where you can rez  vehicles.  You do not have to be signed up for the game to use these  airports. After the rocket is created, sit on it (which you can do  simply by touching the fuselage).  You fly by pressing the navigation keys (arrows, page up and down).
+
+While in flight, floating text will appear above the rocket giving its current bearing (0° North, 90° East, 180° South, 270° West), Altitude, and the altitude of the terrain below the rocket.  If a destination has been specified with “Set destination” the range to the destination in metres and the azimuth angle to the destination with respect to the rocket's current orientation will be shown.
+
+Autopilot
+
+The autopilot automates the routine task of flying and handles details such as adjusting altitude to avoid high terrain or obstacles in the rocket's path, evading threats (such as banned parcels or “security orbs”) along the way, and landing automatically at the destination.  To use the autopilot, first specify a destination in any of the forms used in Second Life (see the “Set destination” command below for details), then engage the autopilot with “Set autopilot on”.
+
+Terrain Following
+
+As the rocket flies with the autopilot engaged, it automatically  monitors the terrain below it and in its path to detect high terrain or  obstacles, and commands altitude adjustments to avoid them.  An  extremely tall obstacle may not be detected in time to avoid it, but in  most cases this will avoid collisions.
+
+Collision Recovery
+
+With the autopilot engaged, if terrain following fails to avoid an  obstacle and you collide with it, the rocket will back up and perform  an emergency fly-up to try to avoid the obstacle.  In most cases this  will get you past it without the need to take manual control.
+
+SAM Sites
+
+Flying through Second Life will acquaint you with some of its aspects  which make for “unfriendly skies”.  In particular, flying into a parcel  which has erected ban lines or has a “security orb” that throws out  those who enter may result in your vehicle being de-materialised and  your falling to earth or being teleported back to your home location.  We model these as Surface-to-Air Missile (SAM) Sites, and allow you to  enter their locations, the radius at which they present a threat, and  how high the threat extends into the air (many security systems allow  overflight above a certain altitude).
+
+Dropping Anvils
+
+No ACME rocket would be complete without the ability to drop anvils on  pesky roadrunners or other nuisances.  While flying the rocket, just  touch the rocket body or enter the “Drop” or “Fire” command (they are  synonyms) in local chat, and an anvil will be dropped from the rocket's  current position.  When the anvil hits the ground or an object below,  it will explode in a cloud of smoke, emit a bang, and place a temporary  impact marker (white star) which will disappear after thirty seconds.  A target is included for bombing competitions.
+
+Chat and Script Commands
+
+The rocket listens on local chat for commands on channel 1633 (you can change the channel with the “Channel” command: see below). All commands can be submitted either from local chat or by a script  supplied in a notecard in the rocket's inventory.  You do not need to be seated on the rocket to send commands.
+
+UFO
+
+A flying UFO model is included.  It is completely compatible with the rocket and includes all of its features.
+
+License
+
+This product (software, documents, images, and models) is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.
