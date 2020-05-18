@@ -237,6 +237,9 @@
                         siteIndex++;
                         placeSite(siteIndex, radius, t_rad, t_alt, height, randr);
                     }
+                    if (siteIndex > 16) {
+                        tawk("Warning: \"Set SAM scan\" cannot detect more than 16 SAM sites.");
+                    }
                 }
             }
 
@@ -279,7 +282,6 @@
                 posx = radius * igRand(1, 1) * rSign();
                 posy = radius * igRand(1, 1) * rSign();
             }
-//tawk("Posx " + (string) posx + "  Posy " + (string) posy);
             where = pos + < posx, posy, height / 2 >;
         }
 

@@ -20,7 +20,7 @@
     integer siteChannel = -982449720;   // Channel for communicating with sites
     integer impactH = 0;            // Handle for impact listener
     string impactAction = "ig";     // Action for SAM impacts
-    
+
     //  Link indices within the object
 
     integer lSounds;                // Link containing sound and light
@@ -72,7 +72,7 @@
     //  Pilotage messages
     integer LM_PI_FIRE = 26;        // Fire weapon / handle impact
     integer LM_PI_PILOT = 27;       // Pilot sit / unsit
-    
+
     //  Sounds messages
     integer LM_SO_FLASH = 45;       // Explosion particle effect
 
@@ -281,7 +281,7 @@ if (dest == "c") {              // Castle
 
     listSites(string pfx) {
         integer n = llGetListLength(samSites) / samSitesN;
-        
+
         if (n == 0) {
             tawk(pfx + "No SAM sites.");
         } else {
@@ -947,7 +947,7 @@ if (dest == "c") {              // Castle
 /* IF ROCKET  */
             lSounds = findLinkNumber("Nosecone");
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
             lSounds = findLinkNumber("Saucer bottom");
 /* END UFO */
         }
@@ -1030,9 +1030,9 @@ if (dest == "c") {              // Castle
                 saTrace = llList2Integer(llJson2List(str), 0) >= 5;
             }
         }
-        
+
         //  Listen for impact messages from SAM sites
-        
+
         listen(integer channel, string name, key id, string message) {
             if (channel == siteChannel) {
                 if (llGetSubString(message, 0, 0) == "[") {
@@ -1053,7 +1053,7 @@ if (dest == "c") {              // Castle
                 }
             }
         }
-        
+
 
         //  Dataserver: receive region look-up query information
 
@@ -1121,9 +1121,14 @@ if (dest == "c") {              // Castle
                 return;
             }
 
+            if (ndet >= 16) {
+                tawk("Warning: 16 SAM sites were detected.  If more than 16\n" +
+                     "   sites exist, some will not have been found.");
+            }
+
             samSites = [ ];                     // Clear existing SAM sites
 
-            destRegion = llGetRegionName();     // ALl sites within our region
+            destRegion = llGetRegionName();     // All sites are within our region
             destGrid = llGetRegionCorner() / 256;
 
             for (i = 0; i < ndet; i++) {
