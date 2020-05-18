@@ -230,7 +230,7 @@ entered as “se sc RU Test”.
                 arriving at the destination. If flying via one or more
                 waypoints on the way to the destination, set land off
                 for all but the last leg of the flight.
-                
+
             Set autopilot mark at/clear/list
                 The autopilot allows you to define named destinations
                 called “marks”.  To create a mark use:
@@ -266,17 +266,17 @@ entered as “se sc RU Test”.
                 Fourmilab Island, Fourmilab (120, 122, 28) - Moderate
                 http://maps.secondlife.com/secondlife/Fourmilab/120/122/28
                 secondlife://Fourmilab/128/122/28
-                
+
             You can specify a destination at the vehicle's current
             position with:
                 here://
             This is useful in conjunciton with the “Set autopilot mark”
             command to save a position to return to later.
-            
+
             To set the destination to a mark previously stored with
             “Set autopilot mark at Name”, use:
                 mark://Name
-            
+
             In addition, you can specify a random destination either
             within the current region or in a territory of a specified
             number of adjacent regions using:
@@ -296,9 +296,9 @@ entered as “se sc RU Test”.
                         If a single value is specified, that fixed value.
                         If no value specified, a random value between 0
                         and 4096.  If blank, a fixed value of 50 metres.
-            The Second Life grid is not completely tiled with active 
-            regions.  If the random selection chooses a location where 
-            no region exists, it will retry as many as five times 
+            The Second Life grid is not completely tiled with active
+            regions.  If the random selection chooses a location where
+            no region exists, it will retry as many as five times
             before giving up.
 
         Set echo on/off
@@ -349,12 +349,12 @@ entered as “se sc RU Test”.
                                 to rez objects, it will probably be
                                 returned to Lost and Found.
                     explode     DANGEROUS!  The vehicle is destroyed,
-                                precipitating the pilot and passenger 
-                                to whatever is below. Note that this 
-                                makes no backup of the vehicle, and 
+                                precipitating the pilot and passenger
+                                to whatever is below. Note that this
+                                makes no backup of the vehicle, and
                                 you'll have to rez a new vehicle.
-                These modes are mostly intended for racing games, where 
-                part of the challenge is dodging SAM sites.  They allow 
+                These modes are mostly intended for racing games, where
+                part of the challenge is dodging SAM sites.  They allow
                 competitors who hit a site to be eliminated.
 
             Set SAM list
@@ -380,7 +380,8 @@ entered as “se sc RU Test”.
                 metres extending up to 1024 metres altitude.  If the
                 label is omitted, one is generated from the region name
                 and site's location.  The list of sites found replaces
-                any previously defined SAM sites.
+                any previously defined SAM sites.  A maximum of 16 SAM
+                sites can be found by a scan.
 
             Set SAM site ["label"] radius altitude SLUrl/Destname
                 Add a SAM site to the threat list.  You may specify a
@@ -437,11 +438,11 @@ entered as “se sc RU Test”.
                 infinite loop can be terminated by "Set script stop",
                 the pilot standing up, or manually disconnecting the
                 autopilot while activated with the down arrow key.
-                
+
             Set script end
-                Marks the end of a "Set script loop".  If the number of 
-                iterations has been reached, proceeds to the next 
-                command. Otherwise, resumes at the statement at the 
+                Marks the end of a "Set script loop".  If the number of
+                iterations has been reached, proceeds to the next
+                command. Otherwise, resumes at the statement at the
                 start of the loop.
 
         Set smoke r g b alpha
@@ -671,31 +672,31 @@ the adventure and enjoy it.
 
 Control Recovery Amulet
 
-One of the failures which can occur when Second Life botches a region 
-crossing is “loss of control”.  The most common symptom of this is the 
-ability to move forward or backward with the arrow keys, but not turn 
-to the side.  This not only affects manual steering of the vehicle, but 
+One of the failures which can occur when Second Life botches a region
+crossing is “loss of control”.  The most common symptom of this is the
+ability to move forward or backward with the arrow keys, but not turn
+to the side.  This not only affects manual steering of the vehicle, but
 also navigating your avatar after you stand and leave it.  This failure
 often persists even after teleporting to a new location, and sometimes
 can be remedied only by logging out of Second Life and signing back
 in, which is intensely irritating.
 
-The Fourmilab Rocket is supplied with a Control Recovery Amulet which, 
-in some cases, allows you to recover from these failures.  The amulet 
-has the appearance of a gold bracelet which you attach to your avatar 
-with the “Add” mechanism.  Once attached, it listens on local chat 
+The Fourmilab Rocket is supplied with a Control Recovery Amulet which,
+in some cases, allows you to recover from these failures.  The amulet
+has the appearance of a gold bracelet which you attach to your avatar
+with the “Add” mechanism.  Once attached, it listens on local chat
 channel 77 for commands.  You can inquire its status with:
     /77 status
-and it will report information about the avatar to which it is 
-attached, the permissions granted, and which animation the avatar is 
+and it will report information about the avatar to which it is
+attached, the permissions granted, and which animation the avatar is
 running.  If a loss of control occurs, you can attempt recovery with:
     /77 fix controls
-(as always, commands and parameters may be abbreviated to two letters). 
-This will acquire all controls from the avatar and then release them 
-back, which will, in many loss of control situations, restore the 
-controls to the avatar.  If this fails, you might try sitting back on 
-the vehicle and standing again, or sitting somewhere on the ground and 
-standing.  If none of these work, odds are you'll have to log out and 
+(as always, commands and parameters may be abbreviated to two letters).
+This will acquire all controls from the avatar and then release them
+back, which will, in many loss of control situations, restore the
+controls to the avatar.  If this fails, you might try sitting back on
+the vehicle and standing again, or sitting somewhere on the ground and
+standing.  If none of these work, odds are you'll have to log out and
 back in to restore control over the avatar.
 
 The UFO
@@ -718,10 +719,10 @@ at the same time, the UFO listens for chat commands on channel 1947
 
 SAM Site Deployer
 
-To have fun with SAM evasion, a random SAM Site Deployer is included  
-This is a cylinder you can place anywhere which listens on channel 75 
-(from S-75, the Soviet designation for the SAM which NATO calls the 
-SA-2 Guideline, known for, among other things, shooting down the U-2 in 
+To have fun with SAM evasion, a random SAM Site Deployer is included
+This is a cylinder you can place anywhere which listens on channel 75
+(from S-75, the Soviet designation for the SAM which NATO calls the
+SA-2 Guideline, known for, among other things, shooting down the U-2 in
 1960).
 
 It accepts commands as follows:
@@ -744,15 +745,17 @@ It accepts commands as follows:
 
 In addition the Access, Channel, and Clear utility command are accepted
 as for the rocket.
-    
-Sites placed are all named "SAM site" so they will be found by the “Set 
-SAM scan” command, and have labels starting with “SAM ”.  Sites are 
-shown as semi-transparent cylinders whose tops and sides identify them 
+
+Sites placed are all named "SAM site" so they will be found by the “Set
+SAM scan” command, and have labels starting with “SAM ”.  Sites are
+shown as semi-transparent cylinders whose tops and sides identify them
 by number acccording to the resistor colour code.
 
-If you place too many SAM sites within a region, you may encounter an 
-out of memory crash in the vehicle's Set SAM scan command, as the list 
-of SAM sites is kept as a list in its script memory.
+If you place too many SAM sites within a region, you may encounter an
+out of memory crash in the vehicle's Set SAM scan command, as the list
+of SAM sites is kept as a list in its script memory.  Also, note that
+due to limitations in the Second Life “sensor” mechanism, the “Set SAM
+scan” command cannot find more than 16 SAM sites.
 
 Permissions and the Development Kit
 
@@ -807,8 +810,8 @@ Acknowledgements
     from "Balloon Explode" (SFX 43561988):
         https://www.soundeffectsplus.com/product/balloon-explode-01/
 
-    The "Bomb_explosion" sound when an anvil hits the target or a 
-    destructive collision with a SAM site is extracted from "Cartoon 
+    The "Bomb_explosion" sound when an anvil hits the target or a
+    destructive collision with a SAM site is extracted from "Cartoon
     Bomb Explosion 01" (SFX 43132584):
         https://www.soundeffectsplus.com/product/cartoon-bomb-explosion-01/
 
