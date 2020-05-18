@@ -449,13 +449,21 @@ if (dest == "c") {              // Castle
         }
     }
 
-    //  scriptName  --  Extract script name from Set script command
+    /*  scriptName  --  Extract script name from Set script command.
+                        This is a horrific kludge which allows script
+                        names to be upper and lower case.  It finds the
+                        subcommand in the lower case command then
+                        extracts the text that follows, trimming leading
+                        and trailing blanks, from the upper and lower
+                        case original command.  Note that no subcommand
+                        may begin with a substring of "set script".  */
 
     string scriptName(string subcmd, string lmessage, string message) {
+        //  Find subcommand in Set script subcmd ...
         integer dindex = llSubStringIndex(lmessage, subcmd);
-        dindex += llSubStringIndex(llGetSubString(lmessage, dindex, -1), " ");
-        dindex += llSubStringIndex(llGetSubString(lmessage, dindex, -1),subcmd);
-        dindex += llSubStringIndex(llGetSubString(lmessage, dindex, -1), " ");
+        //  Advance past space after subcmd
+        dindex += llSubStringIndex(llGetSubString(lmessage, dindex, -1), " ") + 1;
+        //  Note that STRING_TRIM elides any leading and trailing spaces
         return llStringTrim(llGetSubString(message, dindex, -1), STRING_TRIM);
     }
 
