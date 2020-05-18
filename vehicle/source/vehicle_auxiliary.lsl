@@ -226,6 +226,7 @@
                 float X_THRUST = llList2Float(arg, 4);
                 float Z_THRUST = llList2Float(arg, 5);
                 integer lSaddle = llList2Integer(arg, 6);
+                integer traceMask = llList2Integer(arg, 7);
 
                 integer pflags = llGetParcelFlags(llGetPos());
                 string pft = parcelFlags(pflags);
@@ -243,6 +244,7 @@
                 if (autoEngaged) {
                     stat += "Autopilot engaged.  Range " + (string) ((integer) llRound(autoRange)) + " metres\n";
                 }
+                stat += "Trace mask: " + (string) traceMask + "\n";
 
                 stat += "Vehicle Management script memory.  Free: " + (string) mFree +
                       "  Used: " + (string) mUsed + " (" +

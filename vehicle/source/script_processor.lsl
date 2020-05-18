@@ -15,13 +15,14 @@
     integer LM_SP_EOF = 56;         // Script input at end of file
     integer LM_SP_READY = 57;       // New script ready
     integer LM_SP_ERROR = 58;       // Requested operation failed
-    integer LM_SP_GOTO = 59;        // Go to line in script
 
     //  Pilotage messages
     integer LM_PI_PILOT = 27;       // Pilot sit / unsit
 
-    //  Vehicle management messages
-    integer LM_VM_TRACE = 113;      // Set trace message level
+    //  Trace messages
+    integer LM_TR_SETTINGS = 120;   // Broadcast trace settings
+    //  Trace module selectors
+    integer LM_TR_S_SCR = 16;       // Script Processor
 
     string ncSource = "";           // Current notecard being read
     key ncQuery;                    // Handle for notecard query
@@ -228,22 +229,15 @@
                     ncLine++;
                 }
 
-            //  LM_SP_GOTO (59): Set next line to read from script
-
-            } else if (num == LM_SP_GOTO) {
-                if (ncBusy) {
-                    ncLine = (integer) str;
-                }
-
             //  LM_PI_PILOT (27): Set pilot agent key
 
             } else if (num == LM_PI_PILOT) {
                 agent = id;
 
-            //  LM_VM_TRACE (113): Set trace level
+            //  LM_TR_SETTINGS (120): Set trace modes
 
-            } else if (num == LM_VM_TRACE) {
-                trace = llList2Integer(llJson2List(str), 0);
+            } else if (num == LM_TR_SETTINGS) {
+                trace = (llList2Integer(llJson2List(str), 0) & LM_TR_S_SCR) != 0;
 
             }
         }

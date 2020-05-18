@@ -24,8 +24,10 @@
     integer LM_RX_LOG = 33;             // Log message
     integer LM_RX_CHANGED = 34;         // Region or link changed
 
-    //  Vehicle management messages
-    integer LM_VM_TRACE = 113;          // Set trace message level
+    //  Trace messages
+    integer LM_TR_SETTINGS = 120;       // Broadcast trace settings
+    //  Trace module selectors
+    integer LM_TR_S_RX = 4;             // Region Crossing
 
     /*  Find a linked prim from its name.  Avoids having to slavishly
         link prims in order in complex builds to reference them later
@@ -329,7 +331,7 @@ integer     crossFault = FALSE;             // no fault yet
 integer     crossHover = FALSE;             // not hovering across a region crossing
 float       crossHoverHeight;               // height during region crossing
 //  Global status
-integer     gLogMsgLevel = LOG_DEBUG;       // display messages locally above this level
+integer     gLogMsgLevel = LOG_ERR;         // display messages locally above this level
 integer     gLogSerial = 0;                 // log serial number
 
 integer     gTimerTick = 0;                 // number of timer ticks
@@ -347,25 +349,11 @@ list        gSitterDistances = [];          // distance to seat of sitter when s
 //
 logrx(integer severity, string msgtype, string msg, float val)
 {
-/*
-    if (severity >= gLogMsgLevel)           // in-world logging
-    {   llOwnerSay(llList2String(LOG_SEVERITY_NAMES,severity) + " " + posasstring(llGetRegionName(), llGetPos()) + " " + msgtype + ": " + msg + " " + (string)val);   }
-    //  Remote logging. Only works if there's another script listening for LOG messages
-    list logdata = [];
-    gLastMsgTime = llGetUnixTime();         // time we last sent a message
-    logdata = logdata + ["tripid"] + gTripId + ["severity"] + severity + ["eventtype"] + msgtype + ["msg"] + msg + ["auxval"] + val
-        + ["timestamp"] + gLastMsgTime + ["serial"] + gLogSerial;
-    string s = llList2Json(JSON_OBJECT, logdata);   // encode as JSON
-    llMessageLinked(LINK_THIS, 0, s, "LOG"); // put message on logger script queue.
-    gLogSerial++;                           // serial number within
-*/
-
-//if (severity >= gLogMsgLevel) {
-//llSay(PUBLIC_CHANNEL, "RegionRX " + (string) severity + "  " + msgtype +
-//      "  " + msg + "  " + (string) val);
-//}
-     llMessageLinked(LINK_THIS, LM_RX_LOG, llList2Json(JSON_ARRAY,
-        [ severity, msgtype, msg, val ]), NULL_KEY);
+//llOwnerSay("logrx   severity " + (string) severity + "  gLogMsgLevel " + (string) gLogMsgLevel);
+    if (severity >= gLogMsgLevel) {
+        llMessageLinked(LINK_THIS, LM_RX_LOG, llList2Json(JSON_ARRAY,
+            [ severity, msgtype, msg, val ]), NULL_KEY);
+    }
 }
 
 key driverKey = NULL_KEY;                   // UUID of driver
@@ -436,7 +424,7 @@ integer handlechanged(integer change)           // returns TRUE if any riders
     }
     if((change & CHANGED_LINK) == CHANGED_LINK)     // rider got on or off
     {
-//integer sittercount = 
+//integer sittercount =
         updatesitters();
 //llOwnerSay("RX CHANGED_LINK  sittercount " + (string) sittercount + "  DRIVER_SEAT_LINK: " + (string) DRIVER_SEAT_LINK + "  sitTarget " + (string) llAvatarOnLinkSitTarget(DRIVER_SEAT_LINK));
         if (llAvatarOnLinkSitTarget(DRIVER_SEAT_LINK) == NULL_KEY) {
@@ -618,7 +606,7 @@ llOwnerSay("Sitters after losing passenger: " + (string) sitters);
             if (num == LM_RX_INIT) {
                 DRIVER_SEAT_LINK = (integer) str;   // Save link number of driver's seat
 //llOwnerSay("Driver link: " + (string) DRIVER_SEAT_LINK + " s " + str);
-                initregionrx(LOG_DEBUG);             // Initialise RegionRX
+                initregionrx(gLogMsgLevel);         // Initialise RegionRX
 
             //  LM_RX_RESET (31): Reset script
 
@@ -645,14 +633,15 @@ llOwnerSay("Sitters after losing passenger: " + (string) sitters);
                 //  We don't worry about passenger link numbers at this level
                 handlechanged( llList2Integer(arg, 0));
 
-            //  LM_VM_TRACE (113): Set trace level
+            //  LM_TR_SETTINGS (120): Set trace modes
 
-            } else if (num == LM_VM_TRACE) {
+            } else if (num == LM_TR_SETTINGS) {
                 gLogMsgLevel = LOG_ERR;
-                if (llList2Integer(llJson2List(str), 0) > 0) {
+
+                if ((llList2Integer(llJson2List(str), 0) & LM_TR_S_RX) != 0) {
                     gLogMsgLevel = LOG_DEBUG;
                 }
-
+//llOwnerSay("gLogMsgLevel " + (string) gLogMsgLevel);
             }
         }
 

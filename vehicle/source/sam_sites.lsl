@@ -76,8 +76,10 @@
     //  Sounds messages
     integer LM_SO_FLASH = 45;       // Explosion particle effect
 
-    //  Vehicle management messages
-    integer LM_VM_TRACE = 113;      // Set trace message level
+    //  Trace messages
+    integer LM_TR_SETTINGS = 120;       // Broadcast trace settings
+    //  Trace module selectors
+    integer LM_TR_S_SAM = 8;            // SAM Sites
 
     /*  Find a linked prim from its name.  Avoids having to slavishly
         link prims in order in complex builds to reference them later
@@ -1023,11 +1025,12 @@ if (dest == "c") {              // Castle
             } else if (num == LM_PI_PILOT) {
                 agent = id;
 
-            //  LM_VM_TRACE (113): Set trace level
 
-            } else if (num == LM_VM_TRACE) {
-                //  Enable SAM trace if global trace level >= 5
-                saTrace = llList2Integer(llJson2List(str), 0) >= 5;
+            //  LM_TR_SETTINGS (120): Set trace modes
+
+            } else if (num == LM_TR_SETTINGS) {
+                saTrace = (llList2Integer(llJson2List(str), 0) & LM_TR_S_SAM) != 0;
+
             }
         }
 

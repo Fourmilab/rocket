@@ -19,6 +19,8 @@
     integer trace = TRUE;       // Trace operation ?
     integer showPanel = TRUE;   // Show control panel (floating text)
 
+    integer traceMask = 0;      // Trace module selection
+
     string helpFileName = "Fourmilab Rocket User Guide"; // Help notecard name
 
     float volume = 1;           // Sound volume
@@ -139,7 +141,6 @@
     integer LM_SP_EOF = 56;             // Script input at end of file
     integer LM_SP_READY = 57;           // Script ready to read
     integer LM_SP_ERROR = 58;           // Requested operation failed
-    integer LM_SP_GOTO = 59;            // Go to line in script
 
     //  Passengers messages
 //  integer LM_PA_INIT = 60;            // Initialise
@@ -165,9 +166,18 @@
 // integer LM_SA_PROBE = 96;            // Probe for threats
 // integer LM_SA_DIVERT = 97;           // Diversion temporary waypoint advisory
 
-    //  Vehicle Management messages
-    integer LM_VM_TRACE = 113;          // Set trace message level
-
+    //  Trace messages
+    integer LM_TR_SETTINGS = 120;       // Broadcast trace settings
+    //  Trace module selectors
+    integer LM_TR_S_PASS = 1;           // Passenger
+    integer LM_TR_S_PILOT = 2;          // Pilotage
+    integer LM_TR_S_RX = 4;             // Region Crossing
+    integer LM_TR_S_SAM = 8;            // SAM Sites
+    integer LM_TR_S_SCR = 16;           // Script Processor
+    integer LM_TR_S_SOUND = 32;         // Sounds
+    integer LM_TR_S_TERR = 64;          // Terrain Following
+    integer LM_TR_S_AUX = 128;          // Vehicle Auxiliary
+    integer LM_TR_S_ALL = 255;          // All modules
 
     /*  Find a linked prim from its name.  Avoids having to slavishly
         link prims in order in complex builds to reference them later
@@ -226,7 +236,9 @@
             if (scriptSuspend) {
                 scriptSuspend = FALSE;
                 llMessageLinked(LINK_THIS, LM_SP_GET, "", NULL_KEY);
-tawk("Script resumed.");
+                if (traceMask & LM_TR_S_SCR) {
+                    tawk("Script resumed.");
+                }
             }
         }
     }
@@ -617,8 +629,10 @@ if (dest == "c") {              // Castle
                         scriptSuspend = TRUE;           // Suspend script while en route
                         autoEngageUpdate();
                         llMessageLinked(LINK_THIS, LM_TF_ACTIVATE,
-                            llList2Json(JSON_ARRAY, [ 1, 1.0, 0 ]) , NULL_KEY);
-tawk("Autopilot engaged.");
+                            llList2Json(JSON_ARRAY, [ 1, 1.0 ]) , NULL_KEY);
+                        if (traceMask & LM_TR_S_PILOT) {
+                            tawk("Autopilot engaged.");
+                        }
 //tawk("Script suspend.");
                     } else {
                         tawk("No destination set.");
@@ -714,7 +728,7 @@ tawk("Autopilot engaged.");
                         } else if (abbrP(wvalue, "li")) {
                             integer ll = llGetListLength(destMark);
                             integer i;
-                            
+
                             for (i = 0; i < ll; i += 3) {
                                 tawk("  " + llList2String(destMark, i) + ": " +
                                     llList2String(destMark, i + 1) + " " +
@@ -876,19 +890,54 @@ else { tawk("Duh"); }
                 }
                 updatePilotageSettings();
 
-            // Trace on/off/n
+            // Trace on/off module...
 
             } else if (abbrP(param, "tr")) {
+                integer trOnOff = FALSE;
                 if (abbrP(svalue, "on")) {
-                    trace = TRUE;
-                } else if (abbrP(svalue, "of")) {
-                    trace = FALSE;
-                } else {
-                    trace = (integer) svalue;
+                    trOnOff = TRUE;
                 }
-                //  Let other scripts know new trace value
-                llMessageLinked(LINK_THIS, LM_VM_TRACE,
-                    llList2Json(JSON_ARRAY, [ trace ]), whoDat);
+
+                integer i;
+                integer tm = 0;
+                for (i = 3; i < argn; i++) {
+                    string modu = llList2String(args, i);
+                    integer tb  = 0;
+                    if (abbrP(modu, "pa")) {            // Passenger
+                        tb = LM_TR_S_PASS;
+                    } else if (abbrP(modu, "pi")) {     // Pilotage
+                        tb = LM_TR_S_PILOT;
+                    } else if (abbrP(modu, "re")) {     // Region
+                        tb = LM_TR_S_RX;
+                    } else if (abbrP(modu, "sa")) {     // SAM
+                        tb = LM_TR_S_SAM;
+                    } else if (abbrP(modu, "sc")) {     // Script
+                        tb = LM_TR_S_SCR;
+                    } else if (abbrP(modu, "so")) {     // Sound
+                        tb = LM_TR_S_SOUND;
+                    } else if (abbrP(modu, "te")) {     // Terrain
+                        tb = LM_TR_S_TERR;
+                    } else if (abbrP(modu, "au")) {     // Auxililary
+                        tb = LM_TR_S_AUX;
+                    } else if (abbrP(modu, "al")) {     // All
+                        tb = LM_TR_S_ALL;
+                    } else {
+                        tawk("Unknown module " + modu);
+                    }
+                    tm = tm | tb;
+                }
+                if (tm == 0) {                          // No module means "all"
+                    tm = LM_TR_S_ALL;
+                }
+                if (trOnOff) {
+                    traceMask = traceMask | tm;
+                } else {
+                    traceMask = traceMask & (~tm);
+                }
+//tawk("TraceMask: " + (string) traceMask);
+                //  Let other scripts know new traceMask setting
+                llMessageLinked(LINK_THIS, LM_TR_SETTINGS,
+                    llList2Json(JSON_ARRAY, [ traceMask ]), whoDat);
 
             // Volume v
 
@@ -916,7 +965,8 @@ else { tawk("Duh"); }
             llMessageLinked(LINK_THIS, LM_VX_STAT,
                 llList2Json(JSON_ARRAY, [ autoEngaged, autoRange,
                                           llGetFreeMemory(), llGetUsedMemory(),
-                                          X_THRUST, Z_THRUST, lSaddle
+                                          X_THRUST, Z_THRUST, lSaddle,
+                                          traceMask
                                         ]),
                 whoDat);
 
@@ -984,8 +1034,10 @@ else { tawk("Duh"); }
             llSetVehicleVectorParam(VEHICLE_ANGULAR_MOTOR_DIRECTION, ZERO_VECTOR);
             llSetLinkPrimitiveParamsFast(LINK_THIS, [ PRIM_TEXT, "", < 0, 0, 0 >, 0 ]);
             llMessageLinked(LINK_THIS, LM_TF_ACTIVATE,
-                llList2Json(JSON_ARRAY, [ 0, 1.0, 0 ]) , NULL_KEY);
-llOwnerSay("Autopilot disengaged.");
+                llList2Json(JSON_ARRAY, [ 0, 1.0 ]) , NULL_KEY);
+            if (traceMask & LM_TR_S_PILOT) {
+                tawk("Autopilot disengaged.");
+            }
             scriptResume();
         }
     }
@@ -1016,8 +1068,8 @@ llSetCameraEyeOffset(ZERO_VECTOR);
 
             vehicleInit();              // Initialise vehicle settings
 
-            llMessageLinked(LINK_THIS, LM_VM_TRACE, // Announce initial trace setting
-                llList2Json(JSON_ARRAY, [ trace ]), whoDat);
+            llMessageLinked(LINK_THIS, LM_TR_SETTINGS,  // Announce initial trace settings
+                llList2Json(JSON_ARRAY, [ traceMask ]), whoDat);
         }
 
         //  When we're instantiated, set physics off

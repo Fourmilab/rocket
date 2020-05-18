@@ -236,8 +236,10 @@
     integer LM_SA_PROBE = 96;       // Probe for threats
     integer LM_SA_DIVERT = 97;      // Diversion temporary waypoint advisory
 
-    //  Vehicle management messages
-    integer LM_VM_TRACE = 113;      // Set trace message level
+    //  Trace messages
+    integer LM_TR_SETTINGS = 120;       // Broadcast trace settings
+    //  Trace module selectors
+    integer LM_TR_S_PILOT = 2;          // Pilotage
 
     /*  Find a linked prim from its name.  Avoids having to slavishly
         link prims in order in complex builds to reference them later
@@ -531,8 +533,8 @@
             llSetVehicleVectorParam(VEHICLE_ANGULAR_MOTOR_DIRECTION, ZERO_VECTOR);
             llSetLinkPrimitiveParamsFast(LINK_THIS, [ PRIM_TEXT, "", < 0, 0, 0 >, 0 ]);
             llMessageLinked(LINK_THIS, LM_TF_ACTIVATE,
-                llList2Json(JSON_ARRAY, [ 0, 1.0, 0 ]) , NULL_KEY);
-            tawk("Autopilot disengaged.");
+                llList2Json(JSON_ARRAY, [ 0, 1.0 ]) , NULL_KEY);
+            ttawk("Autopilot disengaged.");
             scriptResume();
         }
     }
@@ -1252,10 +1254,10 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
                     autoDivertActive = FALSE;
                 }
 
-            //  LM_VM_TRACE (113): Set trace level
+            //  LM_TR_SETTINGS (120): Set trace modes
 
-            } else if (num == LM_VM_TRACE) {
-                trace = llList2Integer(llJson2List(str), 0);
+            } else if (num == LM_TR_SETTINGS) {
+                trace = (llList2Integer(llJson2List(str), 0) & LM_TR_S_PILOT) != 0;
 
             }
         }
@@ -1456,7 +1458,7 @@ tawk("    Threat behind us, proceeding to destination.  " + (string) (bear * RAD
                                 statDests++;
                                 if (autoLandEnable) {
                                     autoLand = TRUE;
-                                    tawk("Autoland in progress.");
+                                    ttawk("Autoland in progress.");
                                 } else {
                                     autoDisengage();
                                 }

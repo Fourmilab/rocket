@@ -16,15 +16,16 @@
     //  Pilotage messages
     integer LM_PI_PILOT = 27;       // Pilot sit / unsit
 
-    //  Vehicle management messages
-    integer LM_VM_TRACE = 113;      // Set trace message level
+    //  Trace messages
+    integer LM_TR_SETTINGS = 120;       // Broadcast trace settings
+    //  Trace module selectors
+    integer LM_TR_S_TERR = 64;          // Terrain Following
 
     integer tfActive = FALSE;       // Is terrain following active ?
     float tfRate = 1;               // Poll rate in seconds
-    integer tfTrace = FALSE;        // Trace operation ?
     float tfStart = 3.0;            // Terrain following minimum range (to avoid vehicle)
     float tfRange = 100;            // Terrain following maximum range
-    integer REGION_SIZE = 256;  // Size of region in metres
+    integer REGION_SIZE = 256;      // Size of region in metres
 
     float terrain = 0;              // Most recent terrain probe
 
@@ -176,7 +177,6 @@
                 list args = llJson2List(str);
                 tfActive = llList2Integer(args, 0);         // Active / Inactive
                 tfRate = llList2Float(args, 1);             // Poll rate
-                tfTrace = llList2Integer(args, 2);          // Trace flag
 
                 if (tfActive) {
                     llSetTimerEvent(tfRate);
@@ -189,10 +189,10 @@
             } else if (num == LM_PI_PILOT) {
                 agent = id;
 
-            //  LM_VM_TRACE (113): Set trace level
+            //  LM_TR_SETTINGS (120): Set trace modes
 
-            } else if (num == LM_VM_TRACE) {
-                trace = llList2Integer(llJson2List(str), 0);
+            } else if (num == LM_TR_SETTINGS) {
+                trace = (llList2Integer(llJson2List(str), 0) & LM_TR_S_TERR) != 0;
 
             }
         }
