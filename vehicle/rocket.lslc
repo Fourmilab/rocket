@@ -6,4 +6,4 @@ ROCKET = 1
 UFO = 0
 
 SAM_TRACE = 1
-
+TERRAIN_TRACE = 1

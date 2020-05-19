@@ -33,7 +33,7 @@
 
     key owner;                      // Owner of the vehicle
     key agent = NULL_KEY;           // Pilot, if any
-    integer trace;                  // Generate trace output ?
+    integer tfTrace;                // Generate trace output ?
 
     //  max  --  Maximum of two float arguments
 
@@ -54,7 +54,7 @@
                   the owner, it is sent with llOwnerSay(), which isn't
                   subject to the region rate gag, rather than
                   llRegionSayTo().  */
-/*
+/* IF TERRAIN_TRACE */
     tawk(string msg) {
         key whom = owner;
         if (agent != NULL_KEY) {
@@ -66,23 +66,23 @@
             llRegionSayTo(whom, PUBLIC_CHANNEL, msg);
         }
     }
-*/
+/* END TERRAIN_TRACE */
 
-    /*  ttawk  --  Send a message with tawk(), but only if trace
+    /*  ttawk  --  Send a message with tawk(), but only if tfTrace
                    is nonzero.  This should only be used for simple
                    messages generated infrequently.  For complex,
                    high-volume messages you should use:
-                       if (trace) { tawk(whatever); }
+                       if (tfTrace) { tawk(whatever); }
                    because that will not generate the message or call a
                    function when trace is not set.  */
 
-/*
+/* IF TERRAIN_TRACE */
     ttawk(string msg) {
-        if (trace) {
+        if (tfTrace) {
             tawk(msg);
         }
     }
-*/
+/* END TERRAIN_TRACE */
 
     /*  regionEdge  --  Distance to edge of region along
                         current trajectory.  */
@@ -192,7 +192,7 @@
             //  LM_TR_SETTINGS (120): Set trace modes
 
             } else if (num == LM_TR_SETTINGS) {
-                trace = (llList2Integer(llJson2List(str), 0) & LM_TR_S_TERR) != 0;
+                tfTrace = (llList2Integer(llJson2List(str), 0) & LM_TR_S_TERR) != 0;
 
             }
         }
@@ -278,7 +278,10 @@
                             if (what != NULL_KEY) {
                                 which = llKey2Name(what);
                             }
-//ttawk("Detected " + which + " at " + (string) where + ", range " + (string) llVecDist(p, where));
+/* IF TERRAIN_TRACE */
+                            ttawk("Detected " + which + " at " + (string) where +
+                                  ", range " + (string) llVecDist(p, where));
+/* END TERRAIN_TRACE */
                             /*  During the screwball perturbations after a turbulent
                                 region crossing, it is possible for our ray casting
                                 to detect parts of the vehicle itself, presumably
@@ -287,7 +290,10 @@
                                 for these self-detections and ignore them.  */
                             if ( llList2Key(llGetObjectDetails(what,
                                 [ OBJECT_ROOT ]), 0) == myself) {
-//ttawk("Detected myself: " + which + " at " + (string) where + ", range " + (string) llVecDist(p, where));
+/* IF TERRAIN_TRACE */
+                                ttawk("Detected myself: " + which + " at " + (string) where +
+                                      ", range " + (string) llVecDist(p, where));
+/* END TERRAIN_TRACE */
                             } else {
                                 conflictAlt = max(conflictAlt, where.z);
                                 nhits++;
@@ -305,7 +311,9 @@
                                                 p + (< 0, 0, tfRange > * r) + <0, 0, probeElev>,
                                     [ RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 5 ]);
                                 rcstat = llList2Integer(rcr, -1);
-//ttawk("Elevation " + (string) probeElev + "  rcstat " + (string) rcstat);
+/* IF TERRAIN_TRACE */
+                                ttawk("Elevation " + (string) probeElev + "  rcstat " + (string) rcstat);
+/* END TERRAIN_TRACE */
                                 float conflictAltE = 0;
                                 nhitsE = 0;
                                 if (rcstat >= 0) {
@@ -317,30 +325,54 @@
                                         if (what != NULL_KEY) {
                                             which = llKey2Name(what);
                                         }
-//ttawk("Detected " + which + " at " + (string) where + ", range " + (string) llVecDist(p, where) + " at elevation " + (string) probeElev);
+/* IF TERRAIN_TRACE */
+                                        ttawk("Detected " + which + " at " + (string) where +
+                                              ", range " + (string) llVecDist(p, where) +
+                                              " at elevation " + (string) probeElev);
+/* END TERRAIN_TRACE */
                                         conflictAltE = max(conflictAltE, where.z);
                                         nhitsE++;
                                     }
                                     if (nhitsE > 0) {
-//ttawk("Elevation " + (string) probeElev + "  Hits " + (string) nhitsE + " at " + (string) conflictAltE);
+/* IF TERRAIN_TRACE */
+                                        ttawk("Elevation " + (string) probeElev + "  Hits " +
+                                              (string) nhitsE + " at " + (string) conflictAltE);
+/* END TERRAIN_TRACE */
                                         conflictAlt = max(conflictAlt, conflictAltE);
                                         probeElev += 10;
                                     } else {
-//ttawk("Elevation " + (string) probeElev + " no hits.  Clear of conflict at " + (string) conflictAlt + " m");
+/* IF TERRAIN_TRACE */
+                                        ttawk("Elevation " + (string) probeElev +
+                                              " no hits.  Clear of conflict at " +
+                                              (string) conflictAlt + " m");
+/* END TERRAIN_TRACE */
                                         jump clear;
                                     }
-                                }// else if (rcstat < 0) {
-//  This usually reports status -2, which means the region is too busy
-//ttawk("Ray cast failed, status " + (string) rcstat + " at elevation " + (string) probeElev);
-//                                }
+                                }
+/* IF TERRAIN_TRACE */
+                                  else if (rcstat < 0) {
+                                    //  This usually reports status -2, which means the region is too busy
+                                    ttawk("Ray cast failed, status " + (string) rcstat +
+                                          " at elevation " + (string) probeElev);
+                                }
+/* END TERRAIN_TRACE */
                             }
                             @clear;
-//ttawk("Ray casting terrain estimation " + (string) conflictAlt);
+/* IF TERRAIN_TRACE */
+                            ttawk("Ray casting terrain estimation " + (string) conflictAlt);
+/* END TERRAIN_TRACE */
                         }
-//else { ttawk("No hits."); }
-                    }// else if (rcstat < 0) {
-//ttawk("Ray cast failed, status " + (string) rcstat);
-//                    }
+/* IF TERRAIN_TRACE */
+                          else {
+                            ttawk("No hits.");
+                        }
+/* END TERRAIN_TRACE */
+                    }
+/* IF TERRAIN_TRACE */
+                      else if (rcstat < 0) {
+                        ttawk("Ray cast failed, status " + (string) rcstat);
+                    }
+/* END TERRAIN_TRACE */
 
                     //  Incorporate ray casting estimate into terrain
                     llMessageLinked(LINK_THIS, LM_TF_TERRAIN,
