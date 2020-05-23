@@ -37,6 +37,7 @@
     integer pilotPerms;         // Permissions requested from pilot avatar
     integer sitLinkPilot = 0;   // Link of seated pilot
     integer sitLinkPassenger = 0;   // Link of seated passenger
+    integer regionChangeControls = FALSE;  // Restoring controls after region change ?
 
     //  Autopilot
 
@@ -60,7 +61,7 @@
     float autoSuspendExp = 0;   // Time autopilot suspend expires
     string autoCollide = "";    // Last object with which we collided
     integer autoCollideCount = 0; // Number of collisions
-    integer autoSAMinterval = 1; // Probe SAM threats every this seconds
+    float autoSAMinterval = 1;  // Probe SAM threats every this seconds
     float autoSAMtime = 0;      // Next SAM threat probe time
     integer updateDistInterval = 1; // Update distance travelled this seconds
     float updateDistTime = 0;   // Time of next distance travelled update
@@ -231,7 +232,6 @@
     integer LM_TF_TERRAIN = 74;     // Report terrain height to client
 
     //  SAM Sites messages
-//  integer LM_SA_ACTIVATE = 93;    // Turn SAM avoidance on or off
     integer LM_SA_COMPLETE = 95;    // Chat command processing complete
     integer LM_SA_PROBE = 96;       // Probe for threats
     integer LM_SA_DIVERT = 97;      // Diversion temporary waypoint advisory
@@ -534,7 +534,7 @@
             llSetLinkPrimitiveParamsFast(LINK_THIS, [ PRIM_TEXT, "", < 0, 0, 0 >, 0 ]);
             llMessageLinked(LINK_THIS, LM_TF_ACTIVATE,
                 llList2Json(JSON_ARRAY, [ 0, 1.0 ]) , NULL_KEY);
-            ttawk("Autopilot disengaged.");
+            tawk("Autopilot disengaged.");
             scriptResume();
         }
     }
@@ -773,6 +773,10 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
                                CONTROL_ROT_RIGHT |
                                CONTROL_ROT_LEFT |
                                CONTROL_ML_LBUTTON, TRUE, FALSE);
+if (regionChangeControls) {
+    regionChangeControls = FALSE;
+    return;
+}
             }
 
             //  Set pilot's camera position
@@ -831,6 +835,10 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
                 statRegionX++;                  // Increment regions crossed
                 autoCornerDivert = FALSE;       // Mark corner divert done if active
                 stuckCount = 0;                 // Mark not stuck
+//  EXPERIMENT: TRY RESTORING CONTROL ON REGION CHANGE
+regionChangeControls = TRUE;
+llReleaseControls();
+llRequestPermissions(agent, pilotPerms);
             }
 
             if (change & CHANGED_LINK) {
@@ -927,6 +935,7 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
 
                         //  Avatar has sat on the control seat
                         sitLinkPilot = llGetNumberOfPrims();    // Link of seated pilot
+regionChangeControls = FALSE;
                         llRequestPermissions(agent, pilotPerms);
                         exPassenger = NULL_KEY;         // Forget ex passenger
                         stable = FALSE;                 // Mark controls unstable, start counter
@@ -1121,6 +1130,7 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
                 Z_THRUST = llList2Float(s, 8);              // 8: Z thrust
                 restrictAccess = llList2Integer(s, 9);      // 9: Access restriction: owner, group, public
                 tfObstacles = llList2Integer(s, 10);        // 10: Terrain following: evade obstacles ?
+                autoSAMinterval = llList2Float(s, 11);      // 11: SAM threat probe interval
 
             //  LM_PI_ENGAGE (25): Engage/disengage autopilot
 
@@ -1223,6 +1233,7 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
             //  LM_PI_MENDCAM (29): Recover permissions, controls, and camera
 
             } else if (num == LM_PI_MENDCAM) {
+regionChangeControls = FALSE;
                 llReleaseControls();
                 llRequestPermissions(agent, pilotPerms);
 
@@ -1308,7 +1319,7 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
                 the suspension interval.  */
 
             if (autoEngaged && (autoSuspendExp > 0) && (t >= autoSuspendExp)) {
-                ttawk("Autopilot re-enabled.");
+                tawk("Autopilot re-enabled.");
                 autoSuspendExp = 0;
             }
 
@@ -1326,52 +1337,6 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
                 autoTurn = FALSE;
                 vector tposi;
                 
-/*  If a SAM site divert is in effect, compute the direct vector
-    to the destination and then, based upon our current position
-    and that vector, evaluate whether the SAM divert point is
-    now behind us.  If so, we have passed it and may now re-instate
-    the direct routing to the target.  Since we only perform the
-    (costly) SAM threat scan periodically, this allows immediate
-    response when a SAM threat has been left behind, avoiding the
-    lag and peregrinations which can occur while waiting for the next
-    threat scan to occur.  */
-
-
-/*
-if (autoDivertActive && (!autoCornerDivert)) {
-tawk("Verifying SAM divert");
-    //  SAM divert waypoint
-    vector dposi = < (autoDivertG.x * REGION_SIZE) + autoDivertR.x,
-                     (autoDivertG.y * REGION_SIZE) + autoDivertR.y, 0 >;
-    //  Destination location
-    tposi = < (destGrid.x * REGION_SIZE) + destRegc.x,
-              (destGrid.y * REGION_SIZE) + destRegc.y, 0 >;
-    vector gridp = rc + p;
-    vector sbear = dposi - gridp;       // Vector from our position to SAM divert
-    sbear.z = 0;
-    vector sbearn = llVecNorm(sbear);   // The same, normalised
-    vector tbear = tposi - gridp;
-    tbear.z = 0;
-    vector tbearn = llVecNorm(tbear);
-    float rbear = llAcos(sbearn * tbearn);  // Bearing of site to travel vector
-    vector bdir = sbearn % tbearn;
-    bear = rbear;
-    if (bdir.z < 0) {
-        bear = TWO_PI - bear;
-    }
-//    float srange = llVecMag(sbear);
-
-    //  Is site still ahead of us ?
-
-    if ((bear < PI_BY_TWO) || (bear > (3 * PI_BY_TWO))) {
-tawk("    Still a threat, divert remains active.  " + (string) (bear * RAD_TO_DEG));
-    } else {
-tawk("    Threat behind us, proceeding to destination.  " + (string) (bear * RAD_TO_DEG));
-        autoDivertActive = FALSE;
-    }
-}
-*/
-
                 if (autoCornerDivert) {
                     tposi = rc + cornerDivertPos;
                     tposi.z = 0;
@@ -1458,7 +1423,7 @@ tawk("    Threat behind us, proceeding to destination.  " + (string) (bear * RAD
                                 statDests++;
                                 if (autoLandEnable) {
                                     autoLand = TRUE;
-                                    ttawk("Autoland in progress.");
+                                    tawk("Autoland in progress.");
                                 } else {
                                     autoDisengage();
                                 }
