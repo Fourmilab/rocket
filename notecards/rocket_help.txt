@@ -188,7 +188,8 @@ entered as “se sc RU Test”.
     Restart
         Restart all of the scripts which control the rocket.  All
         settings are restored to their defaults, including the channel
-        on which the rocket listens in local chat.
+        on which the rocket listens in local chat.  Doing this while
+        flying the vehicle will ruin your whole day.
 
     Set
         The Set command sets a variety of parameters which affect the
@@ -246,6 +247,12 @@ entered as “se sc RU Test”.
                 To reference a mark in “Set destination” use
                 “mark://Name>”, where name was given when you created
                 it.
+
+            Set autopilot SAM n
+                Set the interval at which the autopilot scans for SAM
+                site threats.  This is specified as a number of
+                seconds, with the default one second.  Setting a value
+                of zero disables SAM threat scanning.
 
             Set autopilot tolerance altitude/range n
                 Specify the tolerance, in metres, within which the
@@ -360,6 +367,14 @@ entered as “se sc RU Test”.
             Set SAM list
                 List current SAM sites.
 
+            Set SAM margin n
+                Sets the margin in metres by which the vehicle will
+                avoid SAM sites.  When evading small, densely-packed
+                SAM sites, a large vehicle may collide with a site
+                simply based upon its size.  For large vehicles, set
+                the margin to the largest protrusion from the vehicle's
+                centre of mass.  The default is 2 metres.
+
             Set SAM range n
                 Only scan for SAM sites with the specified range in
                 metres.  This is set to 1024 by default.
@@ -401,11 +416,6 @@ entered as “se sc RU Test”.
                 Perform a threat scan and display the results for all
                 SAM sites.
 
-            Set SAM trace on/off
-                Enable or disable detailed tracing of SAM threat
-                evaluation. This produces voluminous output and is
-                generally only of interest to developers.
-
         Set script
             These commands control the running of scripts stored in
             notecards in the inventory of the rocket's root prim.
@@ -445,6 +455,9 @@ entered as “se sc RU Test”.
                 command. Otherwise, resumes at the statement at the
                 start of the loop.
 
+            Set script sleep n
+                Pauses execution of the script for n seconds.
+
         Set smoke r g b alpha
             Sets the colour, as red, green, and blue components between
             0 and 1, and transparency (0 invisible, 1 opaque) of the
@@ -477,12 +490,12 @@ entered as “se sc RU Test”.
             navigate precisely, and crossing region boundaries at
             “ludicrous speed” is a recipe for disaster.
 
-        Set trace on/off/n
+        Set trace on/off module1 module2...
             Enable or disable internal tracing information in local
-            chat which is usually of interest only to developers.  In
-            addition to “off” or “on”, you can set the trace level to
-            a number from 0 (off) and 1 (on) through 9, with higher
-            numbers generating ever more verbose and detailed output.
+            chat which is usually of interest only to developers.  You
+            can enable or disable trace independently in separate
+            modules by naming them: Passenger, Pilotage, Region, SAM,
+            Script, Sound, Terrain, Auxiliary, or All.
 
         Set volume v
             Sets the volume of the engine sound between 0 (silent) and
