@@ -68,8 +68,8 @@
                    because that will not generate the message or call a
                    function when trace is not set.  */
 
-    ttawk(integer level, string msg) {
-        if (trace >= level) {
+    ttawk(string msg) {
+        if (trace) {
             tawk(msg);
         }
     }
@@ -79,26 +79,26 @@
     integer abbrP(string str, string abbr) {
         return abbr == llGetSubString(str, 0, llStringLength(abbr) - 1);
     }
-    
+
     //  processScriptCommand  --  Handle commands local to script processor
-    
+
     integer processScriptCommand(string message) {
         string lmessage = llToLower(llStringTrim(message, STRING_TRIM));
         list args = llParseString2List(lmessage, [" "], []);    // Command and arguments
         integer argn = llGetListLength(args);
 
-//llOwnerSay("processScriptCommand " + llList2CSV(args));    
+//llOwnerSay("processScriptCommand " + llList2CSV(args));
         if ((argn >= 3) &&
             abbrP(llList2String(args, 0), "se") &&
             abbrP(llList2String(args, 1), "sc")) {
-            
+
             string command = llList2String(args, 2);
-            
+
             //  Set script loop [n]         -- Loop n times (default infinite)
-        
+
             if (abbrP(command, "lo")) {
                 integer iters = -1;
-                
+
                 if (argn >= 4) {
                     iters = llList2Integer(args, 3);
                 }
@@ -106,11 +106,11 @@
 //llOwnerSay("Start loop " + llList2CSV(ncLoops));
 
             //  Set script end              -- End loop
-            
+
             } else if (abbrP(command, "en")) {
 //llOwnerSay("End loop " + llList2CSV(ncLoops));
                 integer iters = llList2Integer(ncLoops, 0);
-                
+
                 if ((iters > 1) || (iters < 0)) {
                     //  Make another iteration
                     if (iters > 1) {
@@ -125,6 +125,16 @@
                         pop loop stack.  */
                     ncLoops = llDeleteSubList(ncLoops, 0, 1);
                 }
+
+            //  Set script sleep n          -- Sleep n seconds
+
+            } else if (abbrP(command, "sl")) {
+                float howlong = 1;
+
+                if (argn >= 4) {
+                    howlong = llList2Float(args, 3);
+                }
+                llSleep(howlong);
             }
             return 1;
         }
@@ -141,7 +151,7 @@
         if (ncBusy) {
             ncQueue = [ ncSource ] + ncQueue;
             ncQline = [ ncLine ] + ncQline;
-            ttawk(1, "Pushing script: " + ncSource + " at line " + (string) ncLine);
+            ttawk("Pushing script: " + ncSource + " at line " + (string) ncLine);
             ncSource = ncname;
             ncLine = 0;
         } else {
@@ -149,7 +159,7 @@
             ncLine = 0;
             ncBusy = TRUE;                  // Mark busy reading notecard
             llMessageLinked(LINK_THIS, LM_SP_READY, ncSource, id);
-            ttawk(1, "Begin script: " + ncSource);
+            ttawk("Begin script: " + ncSource);
         }
     }
 
@@ -182,7 +192,7 @@
                     if (llGetListLength(ncQueue) > 0) {
                         nq = " and outer scripts: " + llList2CSV(ncQueue);
                     }
-                    ttawk(1, "Terminating script: " + ncSource + nq);
+                    ttawk("Terminating script: " + ncSource + nq);
                 }
                 ncSource = "";                  // No current notecard
                 ncBusy = FALSE;                 // Mark no notecard being read
@@ -247,14 +257,14 @@
         dataserver(key query_id, string data) {
             if (query_id == ncQuery) {
                 if (data == EOF) {
-                    ttawk(1, "End script: " + ncSource);
+                    tawk("End script: " + ncSource);
                     if (llGetListLength(ncQueue) > 0) {
                         //  This script is done.  Pop to outer script.
                         ncSource = llList2String(ncQueue, 0);
                         ncQueue = llDeleteSubList(ncQueue, 0, 0);
                         ncLine = llList2Integer(ncQline, 0);
                         ncQline = llDeleteSubList(ncQline, 0, 0);
-                        ttawk(5, "Pop to " + ncSource + " line " + (string) ncLine);
+                        ttawk("Pop to " + ncSource + " line " + (string) ncLine);
                         ncQuery = llGetNotecardLine(ncSource, ncLine);
                         ncLine++;
                     } else {
@@ -262,7 +272,7 @@
                         ncBusy = FALSE;         // Mark notecard input idle
                         ncSource = "";
                         ncLine = 0;
-                        ttawk(5, "Hard EOF: all scripts complete");
+                        ttawk("Hard EOF: all scripts complete");
                         llMessageLinked(LINK_THIS, LM_SP_EOF, "", whoDat);
                     }
                 } else {
