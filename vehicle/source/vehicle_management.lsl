@@ -43,6 +43,7 @@
     integer autoLandEnable = TRUE; // Enable automatic landing ?
     integer autoLand = FALSE;   // Automatic landing in progress
     integer autoSuspendExp = 0; // Time autopilot suspend expires
+    float autoSAMinterval = 1;  // Probe SAM threats every this seconds
 
     //  Terrain following settings
 
@@ -160,7 +161,6 @@
 //  integer LM_SA_INIT = 90;            // Initialise
     integer LM_SA_RESET = 91;           // Reset script
 //  integer LM_SA_STAT = 92;            // Print status
-//  integer LM_SA_ACTIVATE = 93;        // Turn SAM avoidance on or off
     integer LM_SA_COMMAND = 94;         // Process command from chat or script
     integer LM_SA_COMPLETE = 95;        // Chat command processing complete
 // integer LM_SA_PROBE = 96;            // Probe for threats
@@ -265,7 +265,8 @@
                                       X_THRUST,                 // 7: X thrust
                                       Z_THRUST,                 // 8: Z thrust
                                       restrictAccess,           // 9: Access restriction: owner, group, public
-                                      tfObstacles               // 10: Terrain following: avoid obstacles ?
+                                      tfObstacles,              // 10: Terrain following: avoid obstacles ?
+                                      autoSAMinterval           // 11: SAM threat probe interval
                                     ]),
             whoDat);
 
@@ -617,7 +618,9 @@ if (dest == "c") {              // Castle
             //  Autopilot on/off/altitude n/land
 
             if (abbrP(param, "au")) {
-                if (abbrP(svalue, "on")) {              // On
+
+                //  On
+                if (abbrP(svalue, "on")) {
                     if (destRegion != "") {
                         startRegc = llGetPos();         // Save start location within region
                         startRegion =  llGetRegionName();
@@ -638,9 +641,13 @@ if (dest == "c") {              // Castle
                         tawk("No destination set.");
                         return FALSE;
                     }
-                } else if (abbrP(svalue, "of")) {       // Off
+
+                //  Off
+                } else if (abbrP(svalue, "of")) {
                     autoDisengage();
-                } else if (abbrP(svalue, "al")) {       // Altitude n
+
+                // Altitude n
+                } else if (abbrP(svalue, "al")) {
                     float n = (float) llList2String(args, 3);
                     if (n > 0) {
                         autoCruiseAlt = n;
@@ -649,7 +656,9 @@ if (dest == "c") {              // Castle
                         tawk("Invalid altitude.");
                         return FALSE;
                     }
-                } else if (abbrP(svalue, "la")) {   // Land
+
+                // Land [now]/on/off
+                } else if (abbrP(svalue, "la")) {
                     if ((argn == 3) || abbrP(llList2String(args, 3), "no")) {
                         //  Now, or no argument
                         if (agent != NULL_KEY) {
@@ -684,13 +693,12 @@ if (dest == "c") {              // Castle
                     //  Mark at <name> <destination>
                     //       clear [<name>]  (default all)
                     //       list
-
                     } else if (abbrP(svalue, "ma")) {
                         string wvalue = llList2String(args, 3);
                         string ulmessage = llStringTrim(message, STRING_TRIM);
                         list ulargs = llParseString2List(ulmessage, [" "], []);
 
-                        if (abbrP(wvalue, "at")) {
+                        if (abbrP(wvalue, "at")) {          // at
                             string mname = llList2String(ulargs, 4);
                             integer dindex = llSubStringIndex(ulmessage, " " + mname + " ");
                             dindex += llStringLength(mname) + 2;
@@ -705,7 +713,7 @@ if (dest == "c") {              // Castle
                                 destMark += mname;
                                 destMark += dl;
                             }
-                        } else if (abbrP(wvalue, "cl")) {
+                        } else if (abbrP(wvalue, "cl")) {      // clear
                             if (argn < 5) {
                                 destMark = [ ];
                             } else {
@@ -725,7 +733,7 @@ if (dest == "c") {              // Castle
                                     tawk("Mark \"" + mname + "\" not found.");
                                 }
                             }
-                        } else if (abbrP(wvalue, "li")) {
+                        } else if (abbrP(wvalue, "li")) {       // list
                             integer ll = llGetListLength(destMark);
                             integer i;
 
@@ -738,8 +746,12 @@ if (dest == "c") {              // Castle
                             tawk("Invalid.  Set Autopilot mark at/clear/list");
                         }
 
-                    //  Tolerance alt/range n
+                    //  SAM n                   Set SAM threat probe interval
+                    } else if (abbrP(svalue, "sa")) {
+                        autoSAMinterval = (float) llList2String(args, 3);
+                        updatePilotageSettings();
 
+                    //  Tolerance alt/range n
                     } else if (abbrP(svalue, "to")) {
                         string wvalue = llList2String(args, 3);
                         float t = (float) llList2String(args, 4);
@@ -750,9 +762,8 @@ if (dest == "c") {              // Castle
                             autoRangeTolerance = t;
                             updatePilotageSettings();
                         }
-else { tawk("Duh"); }
                 } else {
-                    tawk("Invalid.  Set Autopilot on/off/altitude n/land");
+                    tawk("Invalid.  Set Autopilot on/off/altitude n/land/mark/SAM/tolerance");
                     return FALSE;
                 }
 
