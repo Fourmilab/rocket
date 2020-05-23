@@ -69,6 +69,7 @@
 
     integer fixCtrl = FALSE;    // Fix controls ?
     integer fixAnim = FALSE;    // Fix animations ?
+    integer testAnim = FALSE;   // Test animations ?
 
     //  tawk  --  Send a message to the interacting user in chat
 
@@ -167,13 +168,37 @@
                 tawk("Fix what?  animation/controls");
             }
 
+        //  Test                                    Run various tests
+
+        } else if (abbrP(command, "te")) {
+            if (argn > 1) {
+                string param = llList2String(args, 1);
+
+                //  Test animations
+
+                if (abbrP(param, "an")) {
+                    testAnim = TRUE;
+                    llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION);
+
+                //  Test sit
+
+                } else if (abbrP(param, "si")) {
+                    llUnSit(whoDat);
+                } else {
+                    tawk("Unknown test item.  Valid: animation/sit");
+                }
+            } else {
+                tawk("Test what?  animation/sit");
+            }
+
         //  Status                              Print status
 
         } else if (abbrP(command, "st")) {
             tawk("Control recovery amulet status:\n" +
                  "    Agent Info: " + (string) llGetAgentInfo(whoDat) + "\n" +
                  "    Permissions: " + (string) llGetPermissions() + "\n" +
-                 "    Animation: " + llGetAnimation(whoDat)
+                 "    Animation: " + llGetAnimation(whoDat) + "\n" +
+                 "    Animation list: " + llList2CSV(llGetAnimationList(whoDat))
                 );
         }
         return TRUE;
@@ -296,6 +321,20 @@ llOwnerSay("Controls taken.");
                         llUnSit(whoDat);
                     } else {
                         tawk("Unknown animation state: " + an);
+                    }
+                }
+
+                if (testAnim) {
+                    testAnim = FALSE;
+                    list al = llGetAnimationList(whoDat);
+                    integer i;
+
+                    for (i = 0; i < llGetListLength(al); i++) {
+                        string k = llList2String(al, i);
+                        if (k != "2408fe9e-df1d-1d7d-f4ff-1384fa7b350f") {
+                            tawk("Stopping animation " + k);
+                            llStopAnimation(k);
+                        }
                     }
                 }
             }
