@@ -10,8 +10,6 @@
     key owner;                      // UUID of owner
     key agent = NULL_KEY;           // Pilot, if any
 
-    integer saActive = FALSE;       // Is SAM avoidance active ?
-    float saRate = 1;               // Poll rate in seconds
     integer saTrace = FALSE;        // Trace operation ?
     float samRange = 1024;          // Range in which we scan, metres
     float samMargin = 2;            // Vehicle clearance margin, metres
@@ -61,7 +59,6 @@
     integer LM_SA_INIT = 90;        // Initialise
     integer LM_SA_RESET = 91;       // Reset script
     integer LM_SA_STAT = 92;        // Print status
-    integer LM_SA_ACTIVATE = 93;    // Turn SAM avoidance on or off
     integer LM_SA_COMMAND = 94;     // Process command from chat or script
     integer LM_SA_COMPLETE = 95;    // Chat command processing complete
     integer LM_SA_PROBE = 96;       // Probe for threats
@@ -250,19 +247,6 @@ if (dest == "c") {              // Castle
         return abbr == llGetSubString(str, 0, llStringLength(abbr) - 1);
     }
 
-    //  onOff  --  Parse an on/off parameter
-
-    integer onOff(string param) {
-        if (abbrP(param, "on")) {
-            return TRUE;
-        } else if (abbrP(param, "of")) {
-            return FALSE;
-        } else {
-            tawk("Error: please specify on or off.");
-            return -1;
-        }
-    }
-
     //  eOn  --  Edit a Boolean value to "on" or "off"
 
     string eOn(integer b) {
@@ -444,11 +428,6 @@ if (dest == "c") {              // Castle
                     tawk("No recent threat scan.");
                 }
 
-            //  Set SAM trace on/off
-
-            } else if (abbrP(param, "tr")) {
-                saTrace = onOff(llList2String(args, 3));
-
             } else {
                 tawk("Invalid Set SAM command.");
                 return FALSE;
@@ -494,46 +473,6 @@ if (dest == "c") {              // Castle
             vector adesti = destG + <destR.x, destR.y, 0>;  // Absolute destination on ground
             vector tbear = adesti - aposi;          // Current bearing
             vector tbearn = llVecNorm(tbear);       // Bearing normalised
-
-/*
-            //  If a divert is active, simply see if that threat is still active
-
-            if (actDivert != [ ]) {
-                if (saTrace) {
-                    tr += "\nVerifying divert: " + llList2CSV(actDivert);
-                }
-                i = llList2Integer(actDivert, 0) - 1;   // Divert site index
-                integer x = i * samSitesN;
-
-                //  Absolute site position
-                vector sposa = (llList2Vector(samSites, x + 1) * REGION_SIZE) +
-                               llList2Vector(samSites, x + 2);
-                vector sposi = sposa;
-                sposi.z = 0;
-                vector sbear = sposi - aposi;       // Vector from our position to site
-                vector sbearn = llVecNorm(sbear);   // The same, normalised
-                float rbear = llAcos(sbearn * tbearn);  // Bearing of site to travel vector
-                vector bdir = sbearn % tbearn;
-                float bear = rbear;
-                if (bdir.z < 0) {
-                    bear = TWO_PI - bear;
-                }
-                float srange = llVecMag(sbear);
-
-                //  Is site still ahead of us ?
-
-                if ((srange <= samRange) &&
-                    ((bear < PI_BY_TWO) || (bear > (3 * PI_BY_TWO)))) {
-                    if (saTrace) {
-                        tr += "\n  Still a threat, divert remains active.";
-                    }
-                    return actDivert;       // Divert still active
-                }
-                if (saTrace) {
-                    tr += "\n  Threat behind us, re-scanning threats.";
-                }
-            }
-*/
 
             //  Walk through the SAM sites, evaluating threats
 
@@ -971,8 +910,7 @@ if (dest == "c") {              // Castle
             //  LM_SA_STAT (92): Report status
 
             } else if (num == LM_SA_STAT) {
-                string stat = "SAM site avoidance:  Active: " + (string) saActive +
-                    "  Range: " + ef((string) samRange) + "\n";
+                string stat = "SAM site avoidance:  Range: " + ef((string) samRange) + "\n";
                 stat += "    Trace: " + eOn(saTrace) + "\n";
                 stat += "    Vehicle clearance margin: " + ef((string) samMargin) + "\n";
 
@@ -984,14 +922,6 @@ if (dest == "c") {              // Castle
                 whoDat = id;
                 tawk(stat);
                 listSites("    ");
-
-            //  LM_SA_ACTIVATE (93): Activate/deactivate SAM avoidance
-
-            } else if (num == LM_SA_ACTIVATE) {
-                list args = llJson2List(str);
-                saActive = llList2Integer(args, 0);         // Active / Inactive
-                saRate = llList2Float(args, 1);             // Poll rate
-                saTrace = llList2Integer(args, 2);          // Trace flag
 
             //  LM_SA_COMMAND (94): Process command from chat
 
