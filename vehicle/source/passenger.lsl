@@ -4,12 +4,12 @@
 
                     by John Walker
 
-        This script manages passengers seated on a vehicle.  (At
-        the moment, the plural is aspirational, since the Fourmilab
-        Rocket seats only passenger and this script accommodates only
-        one.  However, the techniques can be generalised for vehicles
-        with more than one passenger.)  The script manages issues such
-        as permissions, avatar animations, and camera positions for
+        This script manages passengers seated on a vehicle.  (At the
+        moment, the plural is aspirational, since the Fourmilab Rocket
+        seats only one passenger and this script accommodates only one.
+        However, the techniques can be generalised for vehicles with
+        more than one passenger.)  The script manages issues such as
+        permissions, avatar animations, and camera positions for
         passengers.  In doing so, it strongly resembles the analogous
         code in the Pilotage script for the vehicle's pilot.
 
@@ -34,14 +34,14 @@
         This means that if you wish to, for example, apply an animation
         to more than one avatar, to cause it to sit on a seat in the
         vehicle, you have to request PERMISSION_TRIGGER_ANIMATION in a
-        separate script for each avatar.  If you, for example, requested
-        this permissions for the first avatar who sat on the vehicle (the
-        pilot), then requested it for a passenger who subsequently sat,
-        you'd lose the permission for the pilot.  Given that animations
-        and permissions are sometimes lost on region crossings, this makes
-        restoring them a nightmare.  This script completely isolates the
-        status of the passenger from that of the pilot, allowing them to
-        be managed independently.
+        separate script for each avatar.  If you, for example,
+        requested this permission for the first avatar who sat on the
+        vehicle (the pilot), then requested it for a passenger who
+        subsequently sat, you'd lose the permission for the pilot.
+        Given that animations and permissions are sometimes lost on
+        region crossings, this makes restoring them a nightmare.  This
+        script completely isolates the status of the passenger from
+        that of the pilot, allowing them to be managed independently.
     */
 
     //  Passengers messages
@@ -50,7 +50,7 @@
     integer LM_PA_STAT = 62;        // Print status
     integer LM_PA_SIT = 63;         // Passenger sits on vehicle
     integer LM_PA_STAND = 64;       // Passenger stands, leaving vehicle
-    
+
     //  Pilotage messages
     integer LM_PI_MENDCAM = 29;     // Mend camera tracking
 
@@ -61,8 +61,6 @@
     key agent;                      // Pilot UUUD (for passenger to pilot messages)
 
     integer passPerms;              // Permissions we request
-
-//    integer rchange = FALSE;        // Is this a region change permissions request ?
 
     default {
 
@@ -124,7 +122,6 @@
                 sitLinkPassenger = llList2Integer(args, 2); // Link number of seated avatar
                 psit = llList2Integer(args, 3);             // Passenger number: 1 -- n
                 agent = id;                                 // Pilot UUID
-//                rchange = FALSE;
                 llRequestPermissions(passenger, passPerms); // Request permissions
 
             //  LM_PA_STAND (64): Passenger stands, leaving vehicle
@@ -141,7 +138,7 @@
 
 
             //  LM_PI_MENDCAM (29): Recover permissions, controls, and camera
-                
+
             } else if (num == LM_PI_MENDCAM) {
                 if (passenger != NULL_KEY) {
                     llRequestPermissions(passenger, passPerms);
@@ -165,39 +162,26 @@
 /* IF ROCKET  */
                     CAMERA_DISTANCE, 5.5,           // Distance to target, metres
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
                     CAMERA_DISTANCE, 9.5,           // Distance to target, metres
 /* END UFO */
                     CAMERA_FOCUS_LAG, 0.0,          // Target tracking time, seconds
 /* IF ROCKET  */
                     CAMERA_FOCUS_OFFSET, <2, 0, 0>, // Camera focus position relative to target
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
                     CAMERA_FOCUS_OFFSET, <0, 0, 0>, // Camera focus position relative to target
 /* END UFO */
                     CAMERA_FOCUS_THRESHOLD, 0.0,    // Region to ignore target motion, metres
 /* IF ROCKET  */
                     CAMERA_PITCH, 5.0,              // Camera pitch relative to target
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
                     CAMERA_PITCH, 25.0,              // Camera pitch relative to target
 /* END UFO */
                     CAMERA_POSITION_LAG, 0.0,       // Camera position adjust lag, seconds
                     CAMERA_POSITION_THRESHOLD, 0.0  // Ignore camera position errors, metres
                 ]);
             }
-          }
-
-        /*  On region changes, test for loss of passenger permissions
-            or active animation and restore if necessary.  */
-/*
-        changed(integer change) {
-            if (change & CHANGED_REGION) {
-                if (psit > 0) {
-                    rchange = TRUE;
-////                    llRequestPermissions(passenger, passPerms);
-                }
-            }
         }
-*/
     }
