@@ -17,9 +17,9 @@
     integer LM_PI_PILOT = 27;       // Pilot sit / unsit
 
     //  Trace messages
-    integer LM_TR_SETTINGS = 120;       // Broadcast trace settings
+    integer LM_TR_SETTINGS = 120;   // Broadcast trace settings
     //  Trace module selectors
-    integer LM_TR_S_TERR = 64;          // Terrain Following
+    integer LM_TR_S_TERR = 64;      // Terrain Following
 
     integer tfActive = FALSE;       // Is terrain following active ?
     float tfRate = 1;               // Poll rate in seconds
@@ -246,7 +246,6 @@
                 rotation r = llGetRot();
                 //  We can't look beyond the region, so restrict if close to edge
                 tfRange = llList2Float(regionEdge(llGetPos(), llRot2Up(llGetLocalRot())), 0);
-//llOwnerSay("tfRange to edge " + (string) tfRange);
                 terrain = max(llGround(ZERO_VECTOR), llWater(ZERO_VECTOR));
                  if (tfRange > 10) {
                     float terrain10 = max(llGround(<0, 0, 10> * r), llWater(<0, 0, 10> * r));
