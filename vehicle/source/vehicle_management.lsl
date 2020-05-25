@@ -276,7 +276,7 @@
 
     showScripts() {
         integer nos = llGetInventoryNumber(INVENTORY_SCRIPT);
-        integer i;
+        integer i = 0;
         do {
             string scriptName = llGetInventoryName(INVENTORY_SCRIPT, i);
 
