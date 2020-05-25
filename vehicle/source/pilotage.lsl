@@ -153,7 +153,7 @@
 /* IF ROCKET  */
     vector dSIT_POS = <-0.95, 0, 1.5>;  // Pilot sit position on vehicle
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
     vector dSIT_POS = <-0.95, 0, 0.35>;  // Pilot sit position on vehicle
 /* END UFO */
     vector dSIT_ROTATION = <0, -90, 0>; // Rotation of pilot to sit position
@@ -164,7 +164,7 @@
     vector dCAM_OFFSET = <-1.5, 0, -1.5>;   // Offset of camera lens from pilot sit position
     vector dCAM_ANG = <0, 0, 8>;        // Camera look-at point relative to pilot CAM_OFFSET
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
     vector dCAM_OFFSET = <-1.5, 0, -1.5>;   // Offset of camera lens from pilot sit position
     vector dCAM_ANG = <0, 0, 8>;        // Camera look-at point relative to pilot CAM_OFFSET
 /* END UFO */
@@ -174,7 +174,7 @@
     vector pSIT_POS = <0.8, 0, -2.5>;   // Passenger sit position on vehicle
     vector pSIT_ROTATION = <0, 90, 180>;    // Rotation of passenger to sit position
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
     vector pSIT_POS = <-0.80, 0, -0.1>;    // Passenger sit position on vehicle
     vector pSIT_ROTATION = <0, -90, 0>; // Rotation of passenger to sit position
 /* END UFO */
@@ -185,7 +185,7 @@
     vector pCAM_OFFSET = <-2, 0, -3>;   // Offset of camera lens from passenger sit position
     vector pCAM_ANG = <0, 0, 1>;        // Camera look-at point relative to passenger CAM_OFFSET
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
     vector pCAM_OFFSET = <-2, 0, -3>;   // Offset of camera lens from passenger sit position
     vector pCAM_ANG = <0, 0, 1>;        // Camera look-at point relative to passenger CAM_OFFSET
 /* END UFO */
@@ -504,7 +504,7 @@
 /* IF ROCKET  */
         pos.z -= 0.8;                   //  Set launch point (too high and it will blow up in bomb bay)
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
         pos.z -= 1.2;                   //  Set launch point (too high and it will blow up in bomb bay)
 /* END UFO */
         if (vel.z < 0) {
@@ -724,8 +724,7 @@
 
             pilotPerms =  PERMISSION_TAKE_CONTROLS |    // Permissions we request
                           PERMISSION_CONTROL_CAMERA |
-PERMISSION_TRACK_CAMERA; // |
-//                          PERMISSION_TRIGGER_ANIMATION;
+                          PERMISSION_TRACK_CAMERA;
 
             //  Save original description of root prim
             nameOrig = llList2String(llGetLinkPrimitiveParams(LINK_ROOT, [ PRIM_NAME ]), 0);
@@ -744,7 +743,7 @@ PERMISSION_TRACK_CAMERA; // |
             lFin3 = findLinkNumber("Tail Fin 3");
             lFin4 = findLinkNumber("Tail Fin 4");
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
             lSaddle = findLinkNumber("Saucer bottom");
             lTailpipe = findLinkNumber("Fourmilab Flying Saucer");
             lPassenger = findLinkNumber("Passenger seat");
@@ -773,10 +772,12 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
                                CONTROL_ROT_RIGHT |
                                CONTROL_ROT_LEFT |
                                CONTROL_ML_LBUTTON, TRUE, FALSE);
-if (regionChangeControls) {
-    regionChangeControls = FALSE;
-    return;
-}
+                /*  If this is restoration of controls after a region change,
+                    we're done.  */
+                if (regionChangeControls) {
+                    regionChangeControls = FALSE;
+                    return;
+                }
             }
 
             //  Set pilot's camera position
@@ -790,21 +791,21 @@ if (regionChangeControls) {
 /* IF ROCKET  */
                     CAMERA_DISTANCE, 5.5,           // Distance to target, metres
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
                     CAMERA_DISTANCE, 9.5,           // Distance to target, metres
 /* END UFO */
                     CAMERA_FOCUS_LAG, 0.0,          // Target tracking time, seconds
 /* IF ROCKET  */
                     CAMERA_FOCUS_OFFSET, <2, 0, 0>, // Camera focus position relative to target
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
                     CAMERA_FOCUS_OFFSET, <0, 0, 0>, // Camera focus position relative to target
 /* END UFO */
                     CAMERA_FOCUS_THRESHOLD, 0.0,    // Region to ignore target motion, metres
 /* IF ROCKET  */
                     CAMERA_PITCH, 5.0,              // Camera pitch relative to target
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
                     CAMERA_PITCH, 25.0,              // Camera pitch relative to target
 /* END UFO */
                     CAMERA_POSITION_LAG, 0.0,       // Camera position adjust lag, seconds
@@ -835,10 +836,20 @@ if (regionChangeControls) {
                 statRegionX++;                  // Increment regions crossed
                 autoCornerDivert = FALSE;       // Mark corner divert done if active
                 stuckCount = 0;                 // Mark not stuck
-//  EXPERIMENT: TRY RESTORING CONTROL ON REGION CHANGE
-regionChangeControls = TRUE;
-llReleaseControls();
-llRequestPermissions(agent, pilotPerms);
+
+                /*  A common problem after a difficult region change is
+                    loss of controls being routed to the pilot.  This
+                    can disable manual flight and often results in the
+                    pilot's being unable to move after standing and
+                    leaving the vehicle.  To try to avoid this, after
+                    every region change we release and re-acquire controls.
+                    This isn't based on any knowledge of what is really
+                    going on, but experimentation and empirical observation
+                    that this seems to do the trick in most circumstances.  */
+
+                regionChangeControls = TRUE;
+                llReleaseControls();
+                llRequestPermissions(agent, pilotPerms);
             }
 
             if (change & CHANGED_LINK) {
@@ -891,7 +902,7 @@ llRequestPermissions(agent, pilotPerms);
 /* IF ROCKET  */
                             llPlaySound("Engine stop", volume);
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
                             llStopSound();
 /* END UFO */
                         }
@@ -935,7 +946,7 @@ llRequestPermissions(agent, pilotPerms);
 
                         //  Avatar has sat on the control seat
                         sitLinkPilot = llGetNumberOfPrims();    // Link of seated pilot
-regionChangeControls = FALSE;
+                        regionChangeControls = FALSE;
                         llRequestPermissions(agent, pilotPerms);
                         exPassenger = NULL_KEY;         // Forget ex passenger
                         stable = FALSE;                 // Mark controls unstable, start counter
@@ -993,7 +1004,7 @@ regionChangeControls = FALSE;
                             starting = TRUE;            // Set engine starting
                             tStarting = llGetTime() + 4; // Set switch to engine loop time
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
                             llLoopSound("Engine flight", volume);
 /* END UFO */
                         }
@@ -1147,7 +1158,7 @@ regionChangeControls = FALSE;
 /* IF ROCKET  */
                     llPlaySound("Engine stop", volume);
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
                     llStopSound();
 /* END UFO */
                 }
@@ -1174,7 +1185,7 @@ regionChangeControls = FALSE;
                             scriptActive = scriptSuspend = FALSE;
                             llMessageLinked(LINK_THIS, LM_SP_INIT, "", whoDat); // Reset Script Processor
                         }
-                        
+
                         //  Helm, full stop!
                         llSetVehicleVectorParam(VEHICLE_LINEAR_MOTOR_DIRECTION,
                             ZERO_VECTOR);
@@ -1192,7 +1203,7 @@ regionChangeControls = FALSE;
 /* IF ROCKET  */
                             llPlaySound("Engine stop", volume);
 /* END ROCKET */
-/* IF UFO 
+/* IF UFO
                             llStopSound();
 /* END UFO */
                         }
@@ -1233,7 +1244,7 @@ regionChangeControls = FALSE;
             //  LM_PI_MENDCAM (29): Recover permissions, controls, and camera
 
             } else if (num == LM_PI_MENDCAM) {
-regionChangeControls = FALSE;
+                regionChangeControls = FALSE;
                 llReleaseControls();
                 llRequestPermissions(agent, pilotPerms);
 
@@ -1273,7 +1284,7 @@ regionChangeControls = FALSE;
             }
         }
 
-        /*  We use the timer to transition from the rocket engine start 
+        /*  We use the timer to transition from the rocket engine start
             sound clip to the loop for the engine running.
 
             When the autopilot is engaged, we evaluate our range and
@@ -1336,7 +1347,7 @@ regionChangeControls = FALSE;
 
                 autoTurn = FALSE;
                 vector tposi;
-                
+
                 if (autoCornerDivert) {
                     tposi = rc + cornerDivertPos;
                     tposi.z = 0;
@@ -1541,22 +1552,14 @@ regionChangeControls = FALSE;
                                 }
                                 stuckCount++;
                                 float stuckTime = llGetTime() - stuckStart;
-//            llOwnerSay("Stuck at " + llGetRegionName() + " " + (string) p + ".  Velocity " + (string) velDestSmooth +
-//                "  Count " + (string) stuckCount + "  Time " + (string) stuckTime);
                                 if ((stuckTime >= stalledTime) && (!stalledWarn)) {
                                     tawk("Stalled, probably at a void sim.  Override autopilot and escape manually.");
                                     stalledWarn = TRUE;
                                 }
                             } else {
-//            if (stuckCount > 0) {
-//                llOwnerSay("Reset stuckCount by progress " + (string) velDestSmooth + " m/sec");
-//            }
                                 stuckCount = 0;
                             }
                         } else {
-//        if (stuckCount > 0) {
-//            llOwnerSay("Reset stuckCount by position " + (string) p);
-//        }
                             stuckCount = 0;
                         }
                     }
