@@ -345,24 +345,6 @@
     */
 
     list parseDestination(string dest) {
-//  Temporary shortcuts for destinations used in testing
-if (dest == "c") {              // Castle
-    dest = "http://maps.secondlife.com/secondlife/Fourmilab/90/68/101";
-} else if (dest == "t") {       // Target
-    dest = "http://maps.secondlife.com/secondlife/Fourmilab/121/135/25";
-} else if (dest == "a") {       // Animats
-    dest = "http://maps.secondlife.com/secondlife/Reeds%20Landing/152/190/23";
-} else if (dest == "e") {       // Empty Quarter
-    dest = "http://maps.secondlife.com/secondlife/Fourmilab/227/178/26";
-} else if (dest == "h") {       // Houseboat
-    dest = "http://maps.secondlife.com/secondlife/Backhill/134/101/22";
-} else if (dest == "d") {       // Denby
-    dest = "http://maps.secondlife.com/secondlife/Denby/219/47/33";
-} else if (dest == "l") {       // Lighthouse
-    dest = "http://maps.secondlife.com/secondlife/Fourmilab/87/212/32";
-} else if (dest == "v") {       // Villa
-    dest = "http://maps.secondlife.com/secondlife/Fourmilab/186/65/26";
-}
         if (llSubStringIndex(dest, "http://") >= 0) {
             /*  SLUrl like:
                 "http://maps.secondlife.com/secondlife/Fourmilab/120/122/28" */
