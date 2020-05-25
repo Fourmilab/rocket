@@ -80,7 +80,10 @@
         return abbr == llGetSubString(str, 0, llStringLength(abbr) - 1);
     }
 
-    //  processScriptCommand  --  Handle commands local to script processor
+    /*  processScriptCommand  --  Handle commands local to script processor.
+                                  Returns TRUE if the command was processed
+                                  locally, FALSE if it should be returned to
+                                  the client.  */
 
     integer processScriptCommand(string message) {
         string lmessage = llToLower(llStringTrim(message, STRING_TRIM));
@@ -135,10 +138,12 @@
                     howlong = llList2Float(args, 3);
                 }
                 llSleep(howlong);
+            } else {
+                return FALSE;               // It's not one of our "Set script"s
             }
-            return 1;
+            return TRUE;
         }
-        return 0;
+        return FALSE;                       // Not "Set script"
     }
 
     //  processNotecardCommands  --  Read and execute commands from a notecard
@@ -279,7 +284,7 @@
                     string s = llStringTrim(data, STRING_TRIM);
                     //  Ignore comments and send valid commands to client
                     if ((llStringLength(s) > 0) && (llGetSubString(s, 0, 0) != "#")) {
-                        if (processScriptCommand(s) != 0) {
+                        if (processScriptCommand(s)) {
                             //  Fetch next line from script
                             ncQuery = llGetNotecardLine(ncSource, ncLine);
                             ncLine++;
