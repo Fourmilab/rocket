@@ -314,7 +314,6 @@
             }
         }
         float v = llRound(l + llFrand(h - l));
-//llOwnerSay("rRange(" + r + ")   [" + (string) l + ", " + (string) h + "] = " + (string) v);
         return v;
     }
 
@@ -329,7 +328,6 @@
             (< llFrand(REGION_SIZE) * (gridsurvR * 2),
                llFrand(REGION_SIZE) * (gridsurvR * 2), 0 > -
              < REGION_SIZE * gridsurvR, REGION_SIZE * gridsurvR, 0 >);
-//llOwnerSay("regcent " + (string) regcent + "  regdest " + (string) regdest);
         return "REG(" + (string) ((integer) llRound(regdest.x)) + "," +
             (string) ((integer) llRound(regdest.y)) + ")";
     }
@@ -595,7 +593,6 @@
             string param = llList2String(args, 1);
             string svalue = llList2String(args, 2);
             float value = (float) svalue;
-//llOwnerSay("Set " + param + " " + svalue);
 
             //  Autopilot on/off/altitude n/land
 
@@ -607,7 +604,6 @@
                         startRegc = llGetPos();         // Save start location within region
                         startRegion =  llGetRegionName();
                         startGrid = llGetRegionCorner();
-//tawk("Start region " + startRegion + " grid co-ordinates: " + (string) startGrid + " local: " + (string) startRegc);
                         autoEngaged = TRUE;
                         autoLand = FALSE;               // We're not landing
                         autoSuspendExp = 0;             // We are not suspended
@@ -618,7 +614,6 @@
                         if (traceMask & LM_TR_S_PILOT) {
                             tawk("Autopilot engaged.");
                         }
-//tawk("Script suspend.");
                     } else {
                         tawk("No destination set.");
                         return FALSE;
@@ -654,7 +649,6 @@
                                 scriptSuspend = TRUE;       // Suspend any running script
                                 llMessageLinked(LINK_THIS, LM_PI_DEST,
                                     llList2Json(JSON_ARRAY, [ destRegion, destGrid, destRegc ]), agent);
-//tawk("Script suspend.");
                             }
                             autoLand = TRUE;
                             autoSuspendExp = 0;
@@ -784,7 +778,6 @@
                     if (fromScript) {
                         scriptSuspend = TRUE;           // Suspend script until result arrives
                     }
-//tawk("Script suspend.");
                 }
 
             //  Echo on/off
@@ -927,7 +920,6 @@
                 } else {
                     traceMask = traceMask & (~tm);
                 }
-//tawk("TraceMask: " + (string) traceMask);
                 //  Let other scripts know new traceMask setting
                 llMessageLinked(LINK_THIS, LM_TR_SETTINGS,
                     llList2Json(JSON_ARRAY, [ traceMask ]), whoDat);
@@ -1182,7 +1174,7 @@ llSetCameraEyeOffset(ZERO_VECTOR);
                         (string) ((integer) llRound(destRegc.x)) + ", " +
                         (string) ((integer) llRound(destRegc.y)) + ", " +
                         (string) ((integer) llRound(destRegc.z)) + ")");
-//tawk("Destination region " + destRegion + " grid co-ordinates: " + (string) destGrid + " local: " + (string) destRegc);
+
                     llMessageLinked(LINK_THIS, LM_PI_DEST,
                         llList2Json(JSON_ARRAY, [ destRegion, destGrid, destRegc ]), agent);
                     stateQ = 0;
@@ -1197,7 +1189,6 @@ llSetCameraEyeOffset(ZERO_VECTOR);
         http_response(key request_id, integer status, list metadata, string body) {
             if (request_id == gridsurvQ) {
                 if (status == 200) {
-//llOwnerSay("Region name: " + body);
                     if (llSubStringIndex(body, "Error 013") == 0) {
                         /*  If no region exists at the randomly-generated
                             co-ordinates, we will receive an Error 013
@@ -1214,7 +1205,6 @@ llSetCameraEyeOffset(ZERO_VECTOR);
                             integer ry = ((integer) llGetSubString(rnameQ, ex + 1, ey - 1) / 256);
                             string qurl = "http://api.gridsurvey.com/simquery.php?xy=" +
                                 (string) rx + "," + (string) ry + "&item=name";
-//llOwnerSay("Retry " + (string) gridsurvC + " QURL " + qurl);
                             stateQ = 3;                     // Requesting region name
                             gridsurvQ = llHTTPRequest(qurl, [ ], "");
                         } else {
@@ -1243,7 +1233,7 @@ llSetCameraEyeOffset(ZERO_VECTOR);
                         regionQ = llRequestSimulatorData(rnameQ, DATA_SIM_STATUS);
                     }
                 } else {
-//  ABORT REGION QUERY
+                    //  Abort region query
                     stateQ = 0;
 tawk("Region query failed, status " + (string) status + ".");
                     destRegion = rnameQ = "";

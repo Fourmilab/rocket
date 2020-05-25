@@ -45,7 +45,6 @@
                 return i;
             }
         }
-//llOwnerSay("Cannot find link " + pname);
         return -1;
     }
 
@@ -87,7 +86,6 @@
         } else if (i == 5) {
             return < v, p, q >;
         }
-//llOwnerSay("Blooie!  " + (string) hsv);
         return < 0, 0, 0 >;
     }
 
@@ -113,7 +111,6 @@
         } else if (timeri > 1) {
             timeri = 1;
         }
-//llOwnerSay("Speed " + (string) speed + "  timeri " + (string) timeri);
         return timeri;
     }
 
@@ -155,7 +152,6 @@
                 lLights += findLinkNumber("Light " + (string) i);
                 lColours += hsv_to_rgb(chooseColour());
             }
-//llOwnerSay("Lights: " + llList2CSV(lLights));
         }
 
         //  When we're instantiated, reset script
@@ -167,7 +163,6 @@
         //  Link messages from other scripts
 
         link_message(integer sender, integer num, string str, key id) {
-//llOwnerSay("UFO message sender " + (string) sender + "  num " + (string) num + "  str " + str + "  id " + (string) id);
 
             //  LM_PI_PILOT (27): Pilot sit / unsit
 
@@ -187,10 +182,9 @@
         //  Process timer event
 
         timer() {
-//llOwnerSay("Tick.");
             setColours();
 
             lColours = llList2List(lColours, 1, -1) + hsv_to_rgb(chooseColour());
             llSetTimerEvent(aniSpeed());
         }
-}
+    }

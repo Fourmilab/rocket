@@ -65,7 +65,6 @@
                     digits++;
                 }
             }
-//llOwnerSay("ef (" + llGetSubString(s, o + 1, p) + ")  dig " + (string) digits + " dec " + (string) decimals);
             if ((digits > 1) && (decimals == 1)) {
                 //  Elide trailing zeroes
                 while ((p >= 0) && (llGetSubString(s, p, p) == "0")) {
@@ -426,11 +425,11 @@ llOwnerSay("Pilotage script restored.");
 
         timer() {
             llMessageLinked(LINK_THIS, LM_VX_HEARTBEAT, "REQ", NULL_KEY);
-            
+
             //  Check for heartbeat failure from other scripts
-            
+
             float t = llGetTime();
-            
+
             if ((hbPilotage - t) > hbTimeout) {
 if (hbPilotageN == 0) {
     llOwnerSay("Pilotage script timeout.");
