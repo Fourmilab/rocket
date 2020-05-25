@@ -1,7 +1,9 @@
 
-#   Configure for Fourmilab Rocket
+#   Configure for Fourmilab Flying Saucer
 
 VERSION = "1.0"
 ROCKET = 0
 UFO = 1
 
+SAM_TRACE = 1
+TERRAIN_TRACE = 1
