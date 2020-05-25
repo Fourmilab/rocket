@@ -131,13 +131,14 @@ passenger to act as bombardier in competitive bombing competitions
 Chat and Script Commands
 
 The rocket listens on local chat for commands on channel 1633 (you can
-change the channel with the “Channel” command: see below). All
+change the channel with the “Channel” command: see below).  All
 commands can be submitted either from local chat or by a script
 supplied in a notecard in the rocket's inventory.  You do not need to
 be seated on the rocket to send commands.  The following commands are
 provided.  All commands and parameters may be abbreviated to two
 characters and are case-insensitive: hence “Set script run Test” may be
-entered as “se sc RU Test”.
+entered as “se sc RU Test”.  Script names and destination
+specifications are, however, case-sensitive.
 
     Access public/group/owner
         Specifies who can fly the rocket.  You can restrict it to the
@@ -209,44 +210,44 @@ entered as “se sc RU Test”.
                 the autopilot is flying.  Pressing any other navigation
                 key temporarily suspends the autopilot and allows
                 manual control (including with the Back key).  After
-                ten seconds of no pilot input, the autopilot will
+                five seconds of no pilot input, the autopilot will
                 re-engage and proceed to the destination.
 
             Set autopilot altitude n
                 Specifies the cruising altitude in metres above terrain
                 and any structures below.  The terrain following radar
                 will automatically scan below and ahead of the rocket
-                and adjust the altitude to maintain this altitude. By
+                and adjust the altitude to maintain this altitude.  By
                 default, the altitude is 120 metres above terrain.  Ban
                 lines for property whose owners have restricted access
                 generally extend 80 metres above terrain, so flying
-                lower risks hitting a one and being ejected from the
+                lower risks hitting one and being ejected from the
                 rocket.
 
             Set autopilot land [on/off/now]
                 If no on or off argument or “now” is specified,
                 immediately disengage the autopilot (if engaged) and
-                immediately activate the auto-land process.
-                Otherwise, set whether the autopilot will land after
-                arriving at the destination. If flying via one or more
-                waypoints on the way to the destination, set land off
-                for all but the last leg of the flight.
+                activate the auto-land process.  Otherwise, set whether
+                the autopilot will land after arriving at the
+                destination.  If flying via one or more waypoints on
+                the way to the destination, set land off for all but
+                the last leg of the flight.
 
             Set autopilot mark at/clear/list
                 The autopilot allows you to define named destinations
                 called “marks”.  To create a mark use:
                     Set autopilot mark at Name Dest
                 where Dest is a destination specified in any of the
-                forms accepted by “Set destination” and Name is
-                an alphanumeric name which is case sensitive.  A
+                forms accepted by “Set destination” and Name is an
+                alphanumeric name which is case sensitive.  A
                 particularly handy Dest specification is “here://”,
                 which defines a mark at the vehicle's current position.
                 A list of all marks is displayed with “Set autopilot
-                mark list”.  To clear a mark by name, use “Set autopilot
-                mark clear Name”; omitting the name deletes all marks.
-                To reference a mark in “Set destination” use
-                “mark://Name>”, where name was given when you created
-                it.
+                mark list”.  To clear a mark by name, use “Set
+                autopilot mark clear Name”; omitting the name deletes
+                all marks. To reference a mark in “Set destination” use
+                “mark://Name”, where the Name was given when you
+                created it.
 
             Set autopilot SAM n
                 Set the interval at which the autopilot scans for SAM
@@ -277,7 +278,7 @@ entered as “se sc RU Test”.
             You can specify a destination at the vehicle's current
             position with:
                 here://
-            This is useful in conjunciton with the “Set autopilot mark”
+            This is useful in conjunction with the “Set autopilot mark”
             command to save a position to return to later.
 
             To set the destination to a mark previously stored with
@@ -289,7 +290,7 @@ entered as “se sc RU Test”.
             number of adjacent regions using:
                 random://region/xl-xh/yl-yh/zl-zh
             where
-                region  If ".", "0", or "", the current region.
+                region  If “.”, “0”, or “”, the current region.
                         If a number greater than 0, a location
                         in an area consisting of the current region
                         and that number of adjacent regions.
@@ -526,7 +527,7 @@ membership in a given group, presence on an explicit access list, age,
 or having payment information on file.  As you approach the boundary of
 land with restricted access, you'll see yellow ban lines surrounding it
 and, if you attempt to cross them in a vehicle, your vehicle may be
-instantly destroyed and your avatar dumped to the ground. These ban
+instantly destroyed and your avatar dumped to the ground.  These ban
 lines appear only as you approach fairly near to the property. This is
 fine if you're exploring on foot, but in a fast flying vehicle you may
 not be able to stop in time after you see them.  Ban lines usually
@@ -572,7 +573,7 @@ vehicle and proceed.
 
 Unfortunately, there is no reliable way to detect these hazards
 remotely. In many cases you simply have to run into them and learn from
-experience. The SAM Sites facility in the Fourmilab Rocket provides a
+experience.  The SAM Sites facility in the Fourmilab Rocket provides a
 means of coping with these hazards.  Create a Notecard with a list of
 banned territories in regions where you fly, then import it before a
 journey with the “Set script run” command.  When flying in autopilot,
@@ -762,7 +763,7 @@ as for the rocket.
 Sites placed are all named "SAM site" so they will be found by the “Set
 SAM scan” command, and have labels starting with “SAM ”.  Sites are
 shown as semi-transparent cylinders whose tops and sides identify them
-by number acccording to the resistor colour code.
+by number according to the resistor colour code.
 
 If you place too many SAM sites within a region, you may encounter an
 out of memory crash in the vehicle's Set SAM scan command, as the list
