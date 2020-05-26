@@ -12,6 +12,9 @@
     float hbPilotage = 0;           // Pilotage
     integer hbPilotageN = 0;        // Pilotage timeout counter
 
+    key owner;                      // Owner of object
+    key pilot = NULL_KEY;           // Pilot key, if seated
+
     //  Vehicle Auxiliary Messages
     integer LM_VX_INIT = 10;        // Initialise
     integer LM_VX_RESET = 11;       // Reset script
@@ -22,6 +25,7 @@
 
     //  Pilotage messages
     integer LM_PI_STAT = 22;        // Print status
+    integer LM_PI_PILOT = 27;       // Pilot sit / unsit
 
     //  Region Crossing messages
     integer LM_RX_STAT = 32;        // Print status
@@ -40,6 +44,27 @@
 
     //  SAM Sites messages
     integer LM_SA_STAT = 92;        // Print status
+
+    /*  tawk  --  Send a message to the interacting user in chat. The
+                  recipient of the message is defined as follows. If an
+                  agent is on the pilot's seat, that avatar receives
+                  the message.  Otherwise, the message goes to the
+                  owner of the object. In either case, if the message
+                  is being sent to the owner, it is sent with
+                  llOwnerSay(), which isn't subject to the region rate
+                  gag, rather than llRegionSayTo().  */
+
+    tawk(string msg) {
+        key whom = owner;
+        if (pilot != NULL_KEY) {
+            whom = pilot;
+        }
+        if (whom == owner) {
+            llOwnerSay(msg);
+        } else {
+            llRegionSayTo(whom, PUBLIC_CHANNEL, msg);
+        }
+    }
 
     //  ef  --  Edit floats in string to parsimonious representation
 
@@ -127,8 +152,7 @@
         }
 
         state_entry() {
-            hbPilotage = 0;                 // Reset heartbeat timers
-            llSetTimerEvent(0.5);           // Start heartbeat timer
+            owner = llGetOwner();
         }
 
         /*  The link_message() event receives commands from the client
@@ -414,11 +438,22 @@
                 if (str == "PILOTAGE") {
                     hbPilotage = llGetTime();
                     if (hbPilotageN > 0) {
-llOwnerSay("Pilotage script restored.");
+                        tawk("Pilotage script restored.");
                         hbPilotageN = 0;
                     }
                 }
-            }
+
+            //  LM_PI_PILOT (27): Pilot sits or stands
+
+            } else if (num == LM_PI_PILOT) {
+                pilot = id;
+                if (pilot != NULL_KEY) {
+                    hbPilotage = llGetTime();   // Reset heartbeat timer
+                    llSetTimerEvent(0.5);       // Start heartbeat probe and check
+                } else {
+                    llSetTimerEvent(0);         // Stop heartbeat timer
+                }
+           }
         }
 
         //  timer()  --  Request heartbeat from other components
@@ -430,10 +465,10 @@ llOwnerSay("Pilotage script restored.");
 
             float t = llGetTime();
 
-            if ((hbPilotage - t) > hbTimeout) {
-if (hbPilotageN == 0) {
-    llOwnerSay("Pilotage script timeout.");
-}
+            if ((t - hbPilotage) > hbTimeout) {
+                if (hbPilotageN == 0) {
+                    tawk("Pilotage script timeout.");
+                }
                 hbPilotageN++;
             }
         }
