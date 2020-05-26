@@ -1,1 +1,1 @@
-rocket, flying, vehicle, ACME, autopilot, bomber, anvil
+rocket, flying, vehicle, ACME, autopilot, bomber, anvil, UFO, flying saucer
