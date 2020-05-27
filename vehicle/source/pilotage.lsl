@@ -539,6 +539,201 @@
         }
     }
 
+    //  changedLink  --  Process change when pilot or passenger sits or stands
+
+    changedLink() {
+        key agentC = llAvatarOnLinkSitTarget(lPilot);           // Avatar on pilot seat
+        key passengerC = llAvatarOnLinkSitTarget(lPassenger);   // Avatar on passenger seat
+
+//llOwnerSay("Pilotage change:  agentC " + (string) agentC + "  passengerC " + (string) passengerC +
+//    "  agent " + (string) agent + "  passenger " + (string) passenger +
+//    "  lPilot " + (string) lPilot + "  lPassenger " + (string) lPassenger);
+
+        if ((agentC == NULL_KEY) && (agent != NULL_KEY)) {
+//llOwnerSay("Pilot stands.");
+            //  Pilot has stood up, departing
+            agent = agentC;
+            vector np = llGetRegionCorner() + llGetPos();
+            statDistance += llVecDist(statLpos, np); // Final odometer update
+            statLpos = np;
+
+            sitLinkPilot = 0;
+            llSetStatus(STATUS_PHYSICS, FALSE);
+            llSetLinkPrimitiveParamsFast(LINK_ROOT, [ PRIM_NAME, nameOrig ]);
+            llReleaseControls();
+            llMessageLinked(LINK_THIS, LM_PI_PILOT, "", agent);
+            statMETlast = llGetTime();          // Save end of mission time
+            exPassenger = NULL_KEY;             // Clear exPassenger
+
+            //  Cancel our event timer
+            llSetTimerEvent(0);
+
+            //  Remove target hit listener
+            llListenRemove(hitH);
+
+            //  If enabled, hide control panel
+            if (showPanel) {
+                llSetLinkPrimitiveParamsFast(LINK_THIS, [ PRIM_TEXT, "", ZERO_VECTOR, 0 ]);
+            }
+
+            //  Disengage autopilot
+            autoDisengage();
+
+            //  If script is active, terminate it
+            if (scriptActive) {
+                scriptActive = scriptSuspend = FALSE;
+                llMessageLinked(LINK_THIS, LM_SP_INIT, "", whoDat); // Reset Script Processor
+            }
+
+            if (!eStopped) {                // Skip if engine sound already stopped
+                starting = FALSE;           // Just in case we're still starting
+                if (volume > 0) {
+/* IF ROCKET  */
+                    llPlaySound("Engine stop", volume);
+/* END ROCKET */
+/* IF UFO
+                    llStopSound();
+/* END UFO */
+                }
+            }
+            eStopped = FALSE;
+
+/* IF ROCKET  */
+            //  Return nozzle to engine off
+            llSetLinkPrimitiveParamsFast(lNozzle,
+                [ PRIM_COLOR, 2, <0.15, 0.15, 0.15>, 1 ]);
+            llSetLinkPrimitiveParamsFast(lNozzle, [ PRIM_GLOW, 2, 0 ]);
+
+            //  Make sure smoke is off
+            smoke(FALSE);
+/* END ROCKET */
+        } else if ((agentC == NULL_KEY) && (ivagent != NULL_KEY)) {
+            ivagent = NULL_KEY;
+            //  Unauthorised pilot leaves vehicle
+//llOwnerSay("Invalid pilot stands.");
+            return;
+        } else if ((passenger != NULL_KEY) && (passengerC == NULL_KEY)) {
+            //  Passenger has departed
+//llOwnerSay("Passenger stands.");
+            exPassenger = passenger;        // Remember departing passenger
+            passenger = NULL_KEY;
+            sitLinkPassenger = 0;
+            if (ivagent != NULL_KEY) {
+                return;                     // Just a simple sit if pilot invalid
+            }
+            llMessageLinked(LINK_THIS, LM_PA_STAND,
+                llList2Json(JSON_ARRAY, [
+                    lPassenger,             // Link on which passenger was seated
+                    1                       // Passenger number: 1 -- n
+                ]), agent);                 // Pilot UUUD (for passenger to pilot messages)
+        } else if ((agentC != NULL_KEY) && (agent == NULL_KEY) && (ivagent == NULL_KEY)) {
+            if (checkAccess(agentC)) {
+//llOwnerSay("Valid pilot sits.");
+                agent = agentC;
+                //  Initialise vehicle properties
+                llMessageLinked(LINK_THIS, LM_VX_INIT, "", NULL_KEY);
+
+                //  Avatar has sat on the control seat
+                sitLinkPilot = llGetNumberOfPrims();    // Link of seated pilot
+                regionChangeControls = FALSE;
+                llRequestPermissions(agent, pilotPerms);
+                exPassenger = NULL_KEY;         // Forget ex passenger
+                stable = FALSE;                 // Mark controls unstable, start counter
+                stableCount = 0;
+                autoSAMtime = 0;                // Schedule an immediate SAM threat probe
+                autoRangeTime = 0;              // Schedule an immediate range update
+                stuckCount = 0;                 // Reset stuck count
+
+                //  Reset mission statistics
+                statRegionX = 0;    // Regions crossed
+                statDistance = 0;   // Distance travelled
+                statLpos = llGetRegionCorner() + llGetPos();
+                statLand = 0;       // Auto-landings performed
+                statCollO = 0;      // Collisions with objects
+                statCollT = 0;      // Collisions with terrain
+                statSAM = 0;        // SAM diverts
+                statDests = 0;      // Destinations arrived at
+                statDrop = 0;       // Anvils dropped
+                T_nhits = T_nscore = 0; // Bombing score
+
+                //  Broadcast key of new pilot
+                llMessageLinked(LINK_THIS, LM_PI_PILOT, "", agent);
+
+                //  Initialise Region Crossing handler
+                llMessageLinked(LINK_THIS, LM_RX_INIT, (string) lPilot, agent);
+
+                //  Initialise Script Processor
+                llMessageLinked(LINK_THIS, LM_SP_INIT, "", agent);
+
+                //  Save pilot's relative position and rotation
+                pPos = llList2Vector(llGetLinkPrimitiveParams(llGetNumberOfPrims(),
+                    [ PRIM_POS_LOCAL ]), 0);
+                pRot = llList2Rot(llGetLinkPrimitiveParams(llGetNumberOfPrims(),
+                    [ PRIM_ROT_LOCAL ]), 0);
+
+                //  Set pilot's name in name of vehicle
+                llSetLinkPrimitiveParamsFast(LINK_ROOT, [ PRIM_NAME,
+                    nameOrig + ": " + llKey2Name(agent) ]);
+
+                llSetStatus(STATUS_PHYSICS, TRUE);
+                statMETstart = llGetTime();     // Start of mission time
+
+                //  Start the event timer
+                llSetTimerEvent(0.1);
+                llResetTime();                  // Reset script elapsed time
+
+                //  Listen for target hit events
+                hitH = llListen(hitChannel, "", "", "");
+
+                eStopped = FALSE;
+                if (volume > 0) {
+/* IF ROCKET  */
+                    llPlaySound("Engine start", volume);
+                    //  Set timer to switch from start sound to running loop
+                    starting = TRUE;            // Set engine starting
+                    tStarting = llGetTime() + 4; // Set switch to engine loop time
+/* END ROCKET */
+/* IF UFO
+                    llLoopSound("Engine flight", volume);
+/* END UFO */
+                }
+
+                llCollisionSound("", 0);        // We handle our own collisions
+                llMessageLinked(lSaddle, LM_SO_PRELOAD, "Collision_boing", agent);
+                llMessageLinked(lSaddle, LM_SO_PRELOAD, "Collision_scrape", agent);
+
+/* IF ROCKET  */
+                //  Set nozzle combustion colour and glow
+                llSetLinkPrimitiveParamsFast(lNozzle,
+                    [ PRIM_COLOR, 2, <1, 0.5, 0>, 1 ]);
+                llSetLinkPrimitiveParamsFast(lNozzle,
+                    [ PRIM_GLOW, 2, 0.5 ]);
+/* END ROCKET */
+            } else {
+//llOwnerSay("Invalid pilot sits.");
+                ivagent = agentC;
+                llRegionSayTo(agentC, PUBLIC_CHANNEL,
+                    "You are not allowed to fly this vehicle.");
+                llUnSit(ivagent);
+                return;
+            }
+        } else if ((passengerC != NULL_KEY) && (passenger == NULL_KEY)) {
+            //  Passenger has joined the pilot, sitting in passenger seat
+//llOwnerSay("Passenger sits.");
+            passenger = passengerC;
+            if (ivagent != NULL_KEY) {
+                return;                     // Just a simple sit if pilot invalid
+            }
+            llMessageLinked(LINK_THIS, LM_PA_SIT,
+                llList2Json(JSON_ARRAY, [
+                    passenger,              // Passenger UUID
+                    lPassenger,             // Link on which passenger seated
+                    sitLinkPassenger,       // Link number of seated avatar
+                    1                       // Passenger number: 1 -- n
+                ]), agent);                 // Pilot UUUD (for passenger to pilot messages)
+        }
+    }
+
     //  processControl  --  Process a control input
 
     processControl(integer level, integer edge) {
@@ -750,6 +945,20 @@
 llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove bogus sit target
 /* END UFO */
             setSitPositions();
+
+            /*  If we come through here and find there's already somebody
+                sitting on the pilot or passenger seat, it may be that we've
+                been reset after the script died during a region crossing.
+                Fake a changed() event to pick up the pilot and passenger
+                now that we're running again.  */
+
+            key agentC = llAvatarOnLinkSitTarget(lPilot);           // Avatar on pilot seat
+            key passengerC = llAvatarOnLinkSitTarget(lPassenger);   // Avatar on passenger seat
+
+            if ((agentC != NULL_KEY) || (passengerC != NULL_KEY)) {
+                changedLink();
+            }
+
         }
 
         //  When we're instantiated, reset script
@@ -853,196 +1062,7 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
             }
 
             if (change & CHANGED_LINK) {
-                key agentC = llAvatarOnLinkSitTarget(lPilot);           // Avatar on pilot seat
-                key passengerC = llAvatarOnLinkSitTarget(lPassenger);   // Avatar on passenger seat
-
-//llOwnerSay("Pilotage change:  agentC " + (string) agentC + "  passengerC " + (string) passengerC +
-//    "  agent " + (string) agent + "  passenger " + (string) passenger +
-//    "  lPilot " + (string) lPilot + "  lPassenger " + (string) lPassenger);
-
-                if ((agentC == NULL_KEY) && (agent != NULL_KEY)) {
-//llOwnerSay("Pilot stands.");
-                    //  Pilot has stood up, departing
-                    agent = agentC;
-                    vector np = llGetRegionCorner() + llGetPos();
-                    statDistance += llVecDist(statLpos, np); // Final odometer update
-                    statLpos = np;
-
-                    sitLinkPilot = 0;
-                    llSetStatus(STATUS_PHYSICS, FALSE);
-                    llSetLinkPrimitiveParamsFast(LINK_ROOT, [ PRIM_NAME, nameOrig ]);
-                    llReleaseControls();
-                    llMessageLinked(LINK_THIS, LM_PI_PILOT, "", agent);
-                    statMETlast = llGetTime();          // Save end of mission time
-                    exPassenger = NULL_KEY;             // Clear exPassenger
-
-                    //  Cancel our event timer
-                    llSetTimerEvent(0);
-
-                    //  Remove target hit listener
-                    llListenRemove(hitH);
-
-                    //  If enabled, hide control panel
-                    if (showPanel) {
-                        llSetLinkPrimitiveParamsFast(LINK_THIS, [ PRIM_TEXT, "", ZERO_VECTOR, 0 ]);
-                    }
-
-                    //  Disengage autopilot
-                    autoDisengage();
-
-                    //  If script is active, terminate it
-                    if (scriptActive) {
-                        scriptActive = scriptSuspend = FALSE;
-                        llMessageLinked(LINK_THIS, LM_SP_INIT, "", whoDat); // Reset Script Processor
-                    }
-
-                    if (!eStopped) {                // Skip if engine sound already stopped
-                        starting = FALSE;           // Just in case we're still starting
-                        if (volume > 0) {
-/* IF ROCKET  */
-                            llPlaySound("Engine stop", volume);
-/* END ROCKET */
-/* IF UFO
-                            llStopSound();
-/* END UFO */
-                        }
-                    }
-                    eStopped = FALSE;
-
-/* IF ROCKET  */
-                    //  Return nozzle to engine off
-                    llSetLinkPrimitiveParamsFast(lNozzle,
-                        [ PRIM_COLOR, 2, <0.15, 0.15, 0.15>, 1 ]);
-                    llSetLinkPrimitiveParamsFast(lNozzle, [ PRIM_GLOW, 2, 0 ]);
-
-                    //  Make sure smoke is off
-                    smoke(FALSE);
-/* END ROCKET */
-                } else if ((agentC == NULL_KEY) && (ivagent != NULL_KEY)) {
-                    ivagent = NULL_KEY;
-                    //  Unauthorised pilot leaves vehicle
-//llOwnerSay("Invalid pilot stands.");
-                    return;
-                } else if ((passenger != NULL_KEY) && (passengerC == NULL_KEY)) {
-                    //  Passenger has departed
-//llOwnerSay("Passenger stands.");
-                    exPassenger = passenger;        // Remember departing passenger
-                    passenger = NULL_KEY;
-                    sitLinkPassenger = 0;
-                    if (ivagent != NULL_KEY) {
-                        return;                     // Just a simple sit if pilot invalid
-                    }
-                    llMessageLinked(LINK_THIS, LM_PA_STAND,
-                        llList2Json(JSON_ARRAY, [
-                            lPassenger,             // Link on which passenger was seated
-                            1                       // Passenger number: 1 -- n
-                        ]), agent);                 // Pilot UUUD (for passenger to pilot messages)
-                } else if ((agentC != NULL_KEY) && (agent == NULL_KEY) && (ivagent == NULL_KEY)) {
-                    if (checkAccess(agentC)) {
-//llOwnerSay("Valid pilot sits.");
-                        agent = agentC;
-                        //  Initialise vehicle properties
-                        llMessageLinked(LINK_THIS, LM_VX_INIT, "", NULL_KEY);
-
-                        //  Avatar has sat on the control seat
-                        sitLinkPilot = llGetNumberOfPrims();    // Link of seated pilot
-                        regionChangeControls = FALSE;
-                        llRequestPermissions(agent, pilotPerms);
-                        exPassenger = NULL_KEY;         // Forget ex passenger
-                        stable = FALSE;                 // Mark controls unstable, start counter
-                        stableCount = 0;
-                        autoSAMtime = 0;                // Schedule an immediate SAM threat probe
-                        autoRangeTime = 0;              // Schedule an immediate range update
-                        stuckCount = 0;                 // Reset stuck count
-
-                        //  Reset mission statistics
-                        statRegionX = 0;    // Regions crossed
-                        statDistance = 0;   // Distance travelled
-                        statLpos = llGetRegionCorner() + llGetPos();
-                        statLand = 0;       // Auto-landings performed
-                        statCollO = 0;      // Collisions with objects
-                        statCollT = 0;      // Collisions with terrain
-                        statSAM = 0;        // SAM diverts
-                        statDests = 0;      // Destinations arrived at
-                        statDrop = 0;       // Anvils dropped
-                        T_nhits = T_nscore = 0; // Bombing score
-
-                        //  Broadcast key of new pilot
-                        llMessageLinked(LINK_THIS, LM_PI_PILOT, "", agent);
-
-                        //  Initialise Region Crossing handler
-                        llMessageLinked(LINK_THIS, LM_RX_INIT, (string) lPilot, agent);
-
-                        //  Initialise Script Processor
-                        llMessageLinked(LINK_THIS, LM_SP_INIT, "", agent);
-
-                        //  Save pilot's relative position and rotation
-                        pPos = llList2Vector(llGetLinkPrimitiveParams(llGetNumberOfPrims(),
-                            [ PRIM_POS_LOCAL ]), 0);
-                        pRot = llList2Rot(llGetLinkPrimitiveParams(llGetNumberOfPrims(),
-                            [ PRIM_ROT_LOCAL ]), 0);
-
-                        //  Set pilot's name in name of vehicle
-                        llSetLinkPrimitiveParamsFast(LINK_ROOT, [ PRIM_NAME,
-                            nameOrig + ": " + llKey2Name(agent) ]);
-
-                        llSetStatus(STATUS_PHYSICS, TRUE);
-                        statMETstart = llGetTime();     // Start of mission time
-
-                        //  Start the event timer
-                        llSetTimerEvent(0.1);
-                        llResetTime();                  // Reset script elapsed time
-
-                        //  Listen for target hit events
-                        hitH = llListen(hitChannel, "", "", "");
-
-                        eStopped = FALSE;
-                        if (volume > 0) {
-/* IF ROCKET  */
-                            llPlaySound("Engine start", volume);
-                            //  Set timer to switch from start sound to running loop
-                            starting = TRUE;            // Set engine starting
-                            tStarting = llGetTime() + 4; // Set switch to engine loop time
-/* END ROCKET */
-/* IF UFO
-                            llLoopSound("Engine flight", volume);
-/* END UFO */
-                        }
-
-                        llCollisionSound("", 0);        // We handle our own collisions
-                        llMessageLinked(lSaddle, LM_SO_PRELOAD, "Collision_boing", agent);
-                        llMessageLinked(lSaddle, LM_SO_PRELOAD, "Collision_scrape", agent);
-
-/* IF ROCKET  */
-                        //  Set nozzle combustion colour and glow
-                        llSetLinkPrimitiveParamsFast(lNozzle,
-                            [ PRIM_COLOR, 2, <1, 0.5, 0>, 1 ]);
-                        llSetLinkPrimitiveParamsFast(lNozzle,
-                            [ PRIM_GLOW, 2, 0.5 ]);
-/* END ROCKET */
-                    } else {
-//llOwnerSay("Invalid pilot sits.");
-                        ivagent = agentC;
-                        llRegionSayTo(agentC, PUBLIC_CHANNEL,
-                            "You are not allowed to fly this vehicle.");
-                        llUnSit(ivagent);
-                        return;
-                    }
-                } else if ((passengerC != NULL_KEY) && (passenger == NULL_KEY)) {
-                    //  Passenger has joined the pilot, sitting in passenger seat
-//llOwnerSay("Passenger sits.");
-                    passenger = passengerC;
-                    if (ivagent != NULL_KEY) {
-                        return;                     // Just a simple sit if pilot invalid
-                    }
-                    llMessageLinked(LINK_THIS, LM_PA_SIT,
-                        llList2Json(JSON_ARRAY, [
-                            passenger,              // Passenger UUID
-                            lPassenger,             // Link on which passenger seated
-                            sitLinkPassenger,       // Link number of seated avatar
-                            1                       // Passenger number: 1 -- n
-                        ]), agent);                 // Pilot UUUD (for passenger to pilot messages)
-                }
+                changedLink();
             }
 
             //  Inform Region Crossing of the change
