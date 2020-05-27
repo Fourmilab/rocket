@@ -555,7 +555,7 @@
         } else if (abbrP(command, "he")) {
             llGiveInventory(id, helpFileName);      // Give requester the User Guide notecard
 
-        //  Mend camera                 Mend disruption
+        //  Mend camera/pilotage        Mend disruption
 
         } else if (abbrP(command, "me")) {
             string param = llList2String(args, 1);
