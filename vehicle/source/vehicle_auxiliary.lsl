@@ -8,7 +8,7 @@
 
     //  Heartbeat counters
 
-    float hbTimeout = 2;            // Heartbeat timeout, seconds
+    float hbTimeout = 5;            // Heartbeat timeout, seconds
     float hbPilotage = 0;           // Pilotage
     integer hbPilotageN = 0;        // Pilotage timeout counter
 
