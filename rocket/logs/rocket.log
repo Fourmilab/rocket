@@ -3140,38 +3140,141 @@ status output.  This dates from when SAM Sites managed its own timed
 threat scans rather than responding to polls from Pilotage and had no
 effect other than confusing people.
 
+2020 May 25
+
+Completed four YouTube videos to demonstrate the vehicles.  These
+are presently marked "Unpublished", which means they can be
+accessed only via the URL, not found by a search or listed in my
+channel.  I will publish them when the marketplace listing (which
+they reference) goes live.
+
+    Airport Tour
+        https://www.youtube.com/watch?v=KrhFsbHh5-w
+    Mountain Tour
+        https://www.youtube.com/watch?v=mKcBeF32Wgs
+    SAM Site Evasion
+        https://www.youtube.com/watch?v=83NKVDgb4dU
+    Bombing
+        https://www.youtube.com/watch?v=LRhzDkoZ604
+
+Nesting of scripts was inadvertently broken when the "Set script sleep"
+command was added.  Script Processor would devour any "Set script"
+command it didn't understand instead of passing it back to the client.
+Fixed.
+
+To allow elimination of the hard-coded destination short-cuts in the
+parseDestination() function in Vehicle Management and SAM Sites, I
+added a new script, Landmarx, which defines mark:// destinations for
+all of the short-cuts.  Updated the Tour test script to use these
+landmarks, which it obtains by calling Landmarx as a nested script. It
+was this that revealed the nested script problem mentioned in the
+previous paragraph.
+
+Removed the hard-coded destination short-cuts from parseDestination()
+in Vehicle Management and SAM Sites.  This is replaced by the
+definitions in the Landmarx script for local testing.
+
+2020 May 26
+
+Our code in Vehicle Auxiliary to detect a heartbeat failure from the
+Pilotage script wasn't working because of a backwards expression for
+computing the time since the last heartbeat was received.  The wild
+run-away climbs we occasionally see are due to failure of the Pilotage
+script, but this wasn't being detected and reported to the pilot due to
+this error.  It's now working as intended.
+
+The timeout warning messages from Vehicle Auxiliary were being sent to
+the owner with llOwnerSay().  I changed the logic to monitor
+LM_PI_PILOT and send them to the pilot if one is seated, and to the
+owner if no pilot is seated.
+
+Vehicle Auxiliary was sending other scripts LM_VX_HEARTBEAT requests
+every half second at all times.  This was wasteful, since we only care
+about the status of other scripts when we're flying.  I changed it to
+only request heartbeats when a pilot is seated on the vehicle.
+
+2020 May 27
+
+Modified the Pilotage script so that in its state_entry() event handler
+it detects whether a pilot or passenger is seated on the vehicle.  If
+so, the logic which handles link changes, which was removed from the
+changed() event to a separate changedLink() function.  This is intended
+to permit recovery from loss of the Pilotage script in a region
+crossing. The experimental "Mend pilotage" command stops and starts the
+Pilotage script then sends it a llResetOtherScript() which should cause
+its state_entry() to be run.  This will discover the seated avatars and
+go back into flight mode.  I have tested this by performing a Mend
+pilotage while flying normally and it works.  It remains to be seen
+whether this will actually work after loss of Pilotage in a region
+crossing.
+
+Went to Snowlands and ran the "Random across regions" script until a
+loss of the Pilotage script occurred.  The handshake timeout was
+correctly detected, and "Test 4" reported Pilotage as stopped.  When I
+tried "Mend pilotage", I got two errors on the debug console which said
+the Pilotage script was not found.  From the timing of these errors, I
+believe they came from the llSetScriptState() calls.  There was no
+error from llResetOtherScript(), even though the Wiki claims it reports
+a missing script.  In any case, Mend pilotage did not correct the
+problem.  When I edited the rocket (still seated on it), the Pilotage
+script was present in the inventory and I was able to open it with the
+editor which reported, as we're used to, not running and not Mono.  I
+checked both boxes, which showed as checked, but that didn't do
+anything as far as the script running (showing up as running in Test 4
+and clearing the timeout).  Then, in the process of trying this and
+that, I made a cosmetic change to the Pilotage script while open in the
+editor, saved it, and lo and behold it came back, started responding,
+and recovered the pilot.  So this behaviour seems consistent with my
+hypothesis that the script is somehow not coming across the region
+crossing (which is why it's reported as not present), but that changing
+and saving it from the inventory restores it and, as a save does,
+resets it.  I don't think there's any way to automate this process from
+a script, but it does appear to provide a way to manually recover from
+a loss of Pilotage.
+
+Ran three tests of Random across regions, two in Snowlands and one in
+Bellisseria.  We had previously gotten some intermittent warnings of
+Pilotage heartbeat failure, so I increased the timeout warning
+criterion to 5 seconds.  That seems to have cured the problem, at least
+in a period of favourable "grid weather" where we experienced no region
+crossing disasters.
+
+I had thought there might be something wrong with Terrain Following,
+but I made a test in Snowlands and confirmed that it is working as
+intended.
 
 
-Autopilot resume after suspend.
+
+
+*** Wild Z climb run-away in Random across regions starting from Backhill.
+
+Langdale Seaside is a gas station and GTFO hub near Denby.
+    http://maps.secondlife.com/secondlife/Langdale/27/55/33
+Coniston Seaside is a water rez zone.
+    http://maps.secondlife.com/secondlife/Coniston/227/184/22
+
+
+
+
+Snowlands Rez Zone (Anton Airstrip helipad)
+    http://maps.secondlife.com/secondlife/Anton/185/51/103
+SAR Zermatt Main Base
+    http://maps.secondlife.com/secondlife/Mieto/145/28/154
+Mainland Transport, Inc. airport
+    http://maps.secondlife.com/secondlife/Bretton/128/216/122
+Braniff-Unity Chamonix Regional Airport
+    http://maps.secondlife.com/secondlife/Minarlo%20Vite/193/119/112
+
+
+Cross Heterocera:
+    CPK Cartage & Storage, Stout
+        http://maps.secondlife.com/secondlife/Stout/57/138/32
+    Wandaland Port
+        http://maps.secondlife.com/secondlife/Alcis/37/184/37
 
 
 Rezzing zones:
 http://maps.secondlife.com/secondlife/Plusia/175/202/38
-
-Mission over mountains:
-    http://maps.secondlife.com/secondlife/Adscita/130/141/117
-to:
-    http://maps.secondlife.com/secondlife/Stout/57/138/32
-
-Mount Campion:
-    http://maps.secondlife.com/secondlife/Campion/166/148/384
-
-
-Lapara Airport East (alt. 345)
-    http://maps.secondlife.com/secondlife/Lapara/187/212/345
-
-Mountain trip
-Start at:
-    http://maps.secondlife.com/secondlife/Adscita/130/141/117
-
-set dest http://maps.secondlife.com/secondlife/Campion/166/148/384
-set autopilot on
-set dest http://maps.secondlife.com/secondlife/Lapara/187/212/345
-set autopilot on
-set dest http://maps.secondlife.com/secondlife/Stout/57/138/32
-set autopilot on
-
-
 
 
 /1633 set de http://maps.secondlife.com/secondlife/Tischeriidae/128/128/39
@@ -3276,10 +3379,6 @@ Loop on:
     [16:53] Fourmilab ACME Rocket: Fourmilab Resident: RegionRX: 2, CROSSSLOW, Waiting for avatar(s) to cross regions., 0.000000
     [16:53] Fourmilab ACME Rocket: Fourmilab Resident: Avatar out of position: 268.627000m from vehicle.
 Abort and llDie() after too many messages.
-
-
-Pass autoRange to Terrain Following to use as tfRange to limit the
-length of probes.
 
 
 Nagle's suggestions for restoring avatar position after a region
