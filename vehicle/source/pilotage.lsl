@@ -562,6 +562,7 @@
             llSetLinkPrimitiveParamsFast(LINK_ROOT, [ PRIM_NAME, nameOrig ]);
             llReleaseControls();
             llMessageLinked(LINK_THIS, LM_PI_PILOT, "", agent);
+            llMessageLinked(lSaddle, LM_PI_PILOT, "", agent);
             statMETlast = llGetTime();          // Save end of mission time
             exPassenger = NULL_KEY;             // Clear exPassenger
 
@@ -658,6 +659,7 @@
 
                 //  Broadcast key of new pilot
                 llMessageLinked(LINK_THIS, LM_PI_PILOT, "", agent);
+                llMessageLinked(lSaddle, LM_PI_PILOT, "", agent);
 
                 //  Initialise Region Crossing handler
                 llMessageLinked(LINK_THIS, LM_RX_INIT, (string) lPilot, agent);

@@ -923,6 +923,8 @@
                 //  Let other scripts know new traceMask setting
                 llMessageLinked(LINK_THIS, LM_TR_SETTINGS,
                     llList2Json(JSON_ARRAY, [ traceMask ]), whoDat);
+                llMessageLinked(lSaddle, LM_TR_SETTINGS,
+                    llList2Json(JSON_ARRAY, [ traceMask ]), whoDat);
 
             // Volume v
 

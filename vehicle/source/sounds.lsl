@@ -14,6 +14,41 @@
     integer LM_SO_PRELOAD = 44;     // Preload sound
     integer LM_SO_FLASH = 45;       // Explosion particle effect
 
+    //  Pilotage messages
+    integer LM_PI_PILOT = 27;       // Pilot sit / unsit
+
+    //  Trace messages
+    integer LM_TR_SETTINGS = 120;   // Broadcast trace settings
+    //  Trace module selectors
+    integer LM_TR_S_SOUND = 32;     // Sounds
+
+    key owner;                      // Owner of the vehicle
+    key agent = NULL_KEY;           // Pilot, if any
+    integer trace;                  // Generate trace output ?
+
+    /*  tawk  --  Send a message to the interacting user in chat.
+                  The recipient of the message is defined as
+                  follows.  If an agent is on the pilot's seat,
+                  that avatar receives the message.  Otherwise,
+                  the message goes to the owner of the object.
+                  In either case, if the message is being sent to
+                  the owner, it is sent with llOwnerSay(), which isn't
+                  subject to the region rate gag, rather than
+                  llRegionSayTo().  */
+/* IF SOUND_TRACE  */
+    tawk(string msg) {
+        key whom = owner;
+        if (agent != NULL_KEY) {
+            whom = agent;
+        }
+        if (whom == owner) {
+            llOwnerSay(msg);
+        } else {
+            llRegionSayTo(whom, PUBLIC_CHANNEL, msg);
+        }
+    }
+/* END SOUND_TRACE */
+
     //  Create particle system for explosion effect
 
     splodey() {
@@ -98,17 +133,44 @@
                 float volume = (float) llGetSubString(str, 0, comma - 1);
                 string clip = llStringTrim(llGetSubString(str, comma + 1, -1), STRING_TRIM);
                 llPlaySound(clip, volume);
+/* IF SOUND_TRACE */
+                if (trace) {
+                    tawk("Play sound: \"" + clip + "\" volume " + (string) volume);
+                }
+/* END SOUND_TRACE */
 
             //  LM_SO_PRELOAD (44): Preload sound clip
 
             } else if (num == LM_SO_PRELOAD) {
                 llPreloadSound(str);                // Note that script sleeps for 1 second
+/* IF SOUND_TRACE */
+                if (trace) {
+                    tawk("Preload sound: \"" + str + "\"");
+                }
+/* END SOUND_TRACE */
 
             //  LM_SO_FLASH (45): Explosion particle system effect
 
             } else if (num == LM_SO_FLASH) {
+                /*  If you want to display multiple visual effects, pass
+                    parameters specifying them via the str argument.  */
                 splodey();
                 llSetTimerEvent(1);                 // Set timer to cancel particle system
+/* IF SOUND_TRACE */
+                if (trace) {
+                    tawk("Display explosion");
+                }
+/* END SOUND_TRACE */
+
+            //  LM_PI_PILOT (27): Set pilot agent key
+
+            } else if (num == LM_PI_PILOT) {
+                agent = id;
+
+            //  LM_TR_SETTINGS (120): Set trace modes
+
+            } else if (num == LM_TR_SETTINGS) {
+                trace = (llList2Integer(llJson2List(str), 0) & LM_TR_S_SOUND) != 0;
             }
         }
 
