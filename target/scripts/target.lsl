@@ -171,6 +171,7 @@
 
         } else if (abbrP(command, "he")) {
             llGiveInventory(whoDat, helpFileName);
+            return;
 
         //  Scores                  Show hit list
 

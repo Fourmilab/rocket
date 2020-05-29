@@ -188,3 +188,10 @@ passed as the command argument.  Note that this allows a clever
 miscreant to clear the score for another user whose key is
 known, but we're hardly talking about Olympic-scale levels of
 security here.
+
+2020 May 29
+
+The Help command delivered the notecard but then reported a bad
+command.  This is because Help does not require ownership of the
+target, and must return after processing the command to avoid falling
+through into the owner-only command handler.
