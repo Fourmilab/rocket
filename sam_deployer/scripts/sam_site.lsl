@@ -51,60 +51,63 @@
         }
 
         on_rez(integer start_param) {
-            /*  The start_param is encoded as follows:
-                    NNRRRAAHH
+            //  If start_param is zero, this is a simple manual rez
+            if (start_param > 0) {
+                /*  The start_param is encoded as follows:
+                        NNRRRAAHH
 
-                    NN      Site number (1 - 99)
-                    RRR     Threat radius, units of 0.1 metres
-                    AA      Threat altitude, metres
-                    HH      Height of displayed barrier, metres
-            */
+                        NN      Site number (1 - 99)
+                        RRR     Threat radius, units of 0.1 metres
+                        AA      Threat altitude, metres
+                        HH      Height of displayed barrier, metres
+                */
 
-            site_number = start_param / 10000000;
-            threat_radius = (start_param / 10000) % 1000;
-            threat_altitude = (start_param / 100) % 100;
-            height = start_param % 100;
+                site_number = start_param / 10000000;
+                threat_radius = (start_param / 10000) % 1000;
+                threat_altitude = (start_param / 100) % 100;
+                height = start_param % 100;
 
-            if (threat_altitude == 0) {
-                threat_altitude = 4096;
-            }
+                if (threat_altitude == 0) {
+                    threat_altitude = 4096;
+                }
 
 llOwnerSay("Site " + (string) site_number + "  Radius " + (string) threat_radius +
     "  Altitude " + (string) threat_altitude + "  Height " + (string) height);
 
-            //  Set the displayed size to those passed by the deployer
+                //  Set the displayed size to those passed by the deployer
 
-            float diam = (threat_radius / 10.0) * 2;
-            llSetLinkPrimitiveParamsFast(LINK_THIS,
-                [ PRIM_SIZE, < diam, diam, height > ]);
+                float diam = (threat_radius / 10.0) * 2;
+                llSetLinkPrimitiveParamsFast(LINK_THIS,
+                    [ PRIM_SIZE, < diam, diam, height > ]);
 
-            //  Get terrain level and adjust to sit on terrain
+                //  Get terrain level and adjust to sit on terrain
 
-            float terrain = llGround(ZERO_VECTOR);
-            float water = llWater(ZERO_VECTOR);
-            if (water > terrain) {
-                terrain = water;
+                float terrain = llGround(ZERO_VECTOR);
+                float water = llWater(ZERO_VECTOR);
+                if (water > terrain) {
+                    terrain = water;
+                }
+                vector pos = llGetPos();
+                pos.z = terrain + (height / 2.0);
+                llSetLinkPrimitiveParamsFast(LINK_THIS,
+                    [ PRIM_POSITION, pos ]);
+
+                //  Set description to site parameters
+
+                string desc = "\"SAM " + (string) site_number + "\" " +
+                    (string) (threat_radius / 10) + "." + (string) (threat_radius % 10) +
+                    " " + (string) threat_altitude;
+                llSetLinkPrimitiveParamsFast(LINK_THIS,
+                    [ PRIM_DESC, desc ]);
+
+                //  Set colour of faces based upon site number
+
+                llSetLinkPrimitiveParamsFast(LINK_THIS,
+                    [ PRIM_COLOR, 0, llList2Vector(colours, (site_number / 10) * 2 + 1), alpha,
+                      PRIM_COLOR, 1, llList2Vector(colours, (site_number % 10) * 2 + 1), alpha ]);
+
+                llListen(siteChannel, "", "", "");      // Listen for commands from the deployer
             }
-            vector pos = llGetPos();
-            pos.z = terrain + (height / 2.0);
-            llSetLinkPrimitiveParamsFast(LINK_THIS,
-                [ PRIM_POSITION, pos ]);
-
-            //  Set description to site parameters
-
-            string desc = "\"SAM " + (string) site_number + "\" " +
-                (string) (threat_radius / 10) + "." + (string) (threat_radius % 10) +
-                " " + (string) threat_altitude;
-            llSetLinkPrimitiveParamsFast(LINK_THIS,
-                [ PRIM_DESC, desc ]);
-
-            //  Set colour of faces based upon site number
-
-            llSetLinkPrimitiveParamsFast(LINK_THIS,
-                [ PRIM_COLOR, 0, llList2Vector(colours, (site_number / 10) * 2 + 1), alpha,
-                  PRIM_COLOR, 1, llList2Vector(colours, (site_number % 10) * 2 + 1), alpha ]);
-
-            llListen(siteChannel, "", "", "");      // Listen for commands from the deployer
         }
 
         //  The listen event handles commands from the deployer
