@@ -1105,10 +1105,10 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
         link_message(integer sender, integer num, string str, key id) {
 //ttawk("Pilotage link message sender " + (string) sender + "  num " + (string) num + "  str " + str + "  id " + (string) id);
 
-            //  LM_VX_HEARTBEAT (15): Request heartbeat
+            //  LM_VX_HEARTBEAT (15): Request for heartbeat
             if (num == LM_VX_HEARTBEAT) {
                 if (str == "REQ") {
-                    llMessageLinked(LINK_THIS, LM_VX_HEARTBEAT, "PILOTAGE", NULL_KEY);
+                    llMessageLinked(LINK_THIS, LM_VX_HEARTBEAT, llGetScriptName(), NULL_KEY);
                 }
 
             //  LM_PI_INIT (20): Initialise pilotage

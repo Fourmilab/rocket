@@ -103,7 +103,7 @@
     integer LM_VX_STAT = 12;            // Print Vehicle Management status
 //  integer LM_VX_PISTAT = 13;          // Print Pilotage status
 //  integer LM_VX_PIPANEL = 14;         // Display pilot's control panel
-//  integer LM_VX_HEARTBEAT = 15;       // Request heartbeat
+    integer LM_VX_HEARTBEAT = 15;       // Request heartbeat
 
     //  Pilotage messages
 //  integer LM_PI_INIT = 20;            // Initialise
@@ -822,7 +822,7 @@
                     integer i;
                     for (i = 0; i < n; i++) {
                         string s = llGetInventoryName(INVENTORY_NOTECARD, i);
-                        if (s != "") {
+                        if ((s != "") && (s != helpFileName)) {
                             tawk("  " + (string) (i + 1) + ". " + s);
                         }
                     }
@@ -1078,12 +1078,15 @@ llSetCameraEyeOffset(ZERO_VECTOR);
         link_message(integer sender, integer num, string str, key id) {
 //llOwnerSay("Main link message sender " + (string) sender + "  num " + (string) num + "  str " + str + "  id " + (string) id);
 
-            //  Region Crossing Messages
-
+            //  LM_VX_HEARTBEAT (15): Request for heartbeat
+            if (num == LM_VX_HEARTBEAT) {
+                if (str == "REQ") {
+                    llMessageLinked(LINK_THIS, LM_VX_HEARTBEAT, llGetScriptName(), NULL_KEY);
+                }
 
             //  LM_PI_PILOT (27): Pilot sit / unsit
 
-            if (num == LM_PI_PILOT) {
+            } else if (num == LM_PI_PILOT) {
                 agent = id;
 
             //  LM_RX_LOG (33): Log message from Region Crossing

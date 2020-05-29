@@ -51,6 +51,9 @@
     integer LM_PA_SIT = 63;         // Passenger sits on vehicle
     integer LM_PA_STAND = 64;       // Passenger stands, leaving vehicle
 
+    //  Vehicle Auxiliary Messages
+    integer LM_VX_HEARTBEAT = 15;   // Request heartbeat
+
     //  Pilotage messages
     integer LM_PI_MENDCAM = 29;     // Mend camera tracking
 
@@ -136,6 +139,11 @@
                 psit = 0;
                 sitLinkPassenger = 0;
 
+            //  LM_VX_HEARTBEAT (15): Request for heartbeat
+            } else if (num == LM_VX_HEARTBEAT) {
+                if (str == "REQ") {
+                    llMessageLinked(LINK_THIS, LM_VX_HEARTBEAT, llGetScriptName(), NULL_KEY);
+                }
 
             //  LM_PI_MENDCAM (29): Recover permissions, controls, and camera
 

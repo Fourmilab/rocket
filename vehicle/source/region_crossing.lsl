@@ -24,6 +24,9 @@
     integer LM_RX_LOG = 33;             // Log message
     integer LM_RX_CHANGED = 34;         // Region or link changed
 
+    //  Vehicle Auxiliary Messages
+    integer LM_VX_HEARTBEAT = 15;   // Request heartbeat
+
     //  Trace messages
     integer LM_TR_SETTINGS = 120;       // Broadcast trace settings
     //  Trace module selectors
@@ -477,6 +480,12 @@ llOwnerSay("Sitters after losing passenger: " + (string) sitters);
                 DRIVER_SEAT_LINK  = llList2Integer(arg, 2);
                 //  We don't worry about passenger link numbers at this level
                 handlechanged( llList2Integer(arg, 0));
+
+            //  LM_VX_HEARTBEAT (15): Request for heartbeat
+            } else if (num == LM_VX_HEARTBEAT) {
+                if (str == "REQ") {
+                    llMessageLinked(LINK_THIS, LM_VX_HEARTBEAT, llGetScriptName(), NULL_KEY);
+                }
 
             //  LM_TR_SETTINGS (120): Set trace modes
 

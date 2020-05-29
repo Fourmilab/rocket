@@ -66,6 +66,9 @@
 
     integer DEFER = 2;              // Status indicating deferred reply from LM_SA_COMMAND
 
+    //  Vehicle Auxiliary Messages
+    integer LM_VX_HEARTBEAT = 15;   // Request heartbeat
+
     //  Pilotage messages
     integer LM_PI_FIRE = 26;        // Fire weapon / handle impact
     integer LM_PI_PILOT = 27;       // Pilot sit / unsit
@@ -931,6 +934,12 @@
                     (vector) llList2String(args, 3));   // Region destination
                 llMessageLinked(LINK_THIS, LM_SA_DIVERT,
                     llList2Json(JSON_ARRAY, div), id);
+
+            //  LM_VX_HEARTBEAT (15): Request for heartbeat
+            } else if (num == LM_VX_HEARTBEAT) {
+                if (str == "REQ") {
+                    llMessageLinked(LINK_THIS, LM_VX_HEARTBEAT, llGetScriptName(), NULL_KEY);
+                }
 
             //  LM_PI_PILOT (27): Set pilot agent key
 

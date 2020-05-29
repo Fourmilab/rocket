@@ -9,8 +9,26 @@
     //  Heartbeat counters
 
     float hbTimeout = 5;            // Heartbeat timeout, seconds
-    float hbPilotage = 0;           // Pilotage
-    integer hbPilotageN = 0;        // Pilotage timeout counter
+
+    /*  List of scripts to heartbeat monitor.  For each script,
+        we have its name, the time we received the last heartbeat
+        from that script, and the number of consecutive timeouts
+        we have observed.  */
+
+    list hbScripts = [
+                        "Passenger", 0, 0,
+                        "Pilotage", 0, 0,
+                        "Region Crossing", 0, 0,
+                        "SAM Sites", 0, 0,
+                        "Script Processor", 0, 0,
+                        "Sounds", 0, 0,
+                        "Terrain Following", 0, 0,
+/* IF UFO
+                        "UFO", 0, 0,
+/* END UFO */
+//                      "Vehicle Auxiliary", 0, 0,     // Heh: can't check ourselves !
+                        "Vehicle Management", 0, 0
+                     ];
 
     key owner;                      // Owner of object
     key pilot = NULL_KEY;           // Pilot key, if seated
@@ -281,6 +299,32 @@
                         (string) ((integer) llRound((mUsed * 100.0) / (mUsed + mFree))) + "%)";
 
                 llRegionSayTo(id, PUBLIC_CHANNEL, stat);        // Vehicle management
+
+                //  Script status
+                stat = "Script status:";
+                integer i;
+                integer n = llGetListLength(hbScripts);
+
+                for (i = 0; i < n; i += 3) {
+                    string sname = llList2String(hbScripts, i);
+                    string sstate = "stopped";
+                    if (llGetInventoryKey(sname) == NULL_KEY) {
+                        sstate = "other_link";
+                    } else {
+                        if (llGetScriptState(sname)) {
+                            sstate = "running";
+                        }
+                    }
+                    string shb = "active";
+                    if (llList2Integer(hbScripts, i + 2) > 0) {
+                        shb = "timeout";
+                    }
+                    stat += "\n  " + sname + ": " + sstate + "  " + shb;
+                }
+                llRegionSayTo(id, PUBLIC_CHANNEL, stat);        // Scripts
+
+                //  Now query other components for their status
+
                 llMessageLinked(LINK_THIS, LM_PI_STAT, "", id); // Pilotage
                 llMessageLinked(LINK_THIS, LM_PA_STAT, "", id); // Passengers
                 llMessageLinked(LINK_THIS, LM_RX_STAT, "", id); // Region crossing
@@ -435,11 +479,19 @@
             //  LM_VX_HEARTBEAT (15): Heartbeat received
 
             } else if (num == LM_VX_HEARTBEAT) {
-                if (str == "PILOTAGE") {
-                    hbPilotage = llGetTime();
-                    if (hbPilotageN > 0) {
-                        tawk("Pilotage script restored.");
-                        hbPilotageN = 0;
+                integer i;
+                integer n = llGetListLength(hbScripts);
+
+                for (i = 0; i < n; i += 3) {
+                    if (llList2String(hbScripts, i) == str) {
+                       hbScripts = llListReplaceList(hbScripts,
+                            [ llGetTime() ], i + 1, i + 1);
+                        if (llList2Integer(hbScripts, i + 2) > 0) {
+                            tawk("Script " + str + " recovered from timeout.");
+                            hbScripts = llListReplaceList(hbScripts,
+                                [ 0 ], i + 2, i + 2);
+                            i = n;
+                        }
                     }
                 }
 
@@ -448,7 +500,13 @@
             } else if (num == LM_PI_PILOT) {
                 pilot = id;
                 if (pilot != NULL_KEY) {
-                    hbPilotage = llGetTime();   // Reset heartbeat timer
+                    float t = llGetTime();      // Reset heartbeat timer
+                    integer i;
+                    integer n = llGetListLength(hbScripts);
+
+                    for (i = 0; i < n; i += 3) {
+                        hbScripts = llListReplaceList(hbScripts, [ t, 0 ], i + 1, i + 2);
+                    }
                     llSetTimerEvent(0.5);       // Start heartbeat probe and check
                 } else {
                     llSetTimerEvent(0);         // Stop heartbeat timer
@@ -459,17 +517,26 @@
         //  timer()  --  Request heartbeat from other components
 
         timer() {
-            llMessageLinked(LINK_THIS, LM_VX_HEARTBEAT, "REQ", NULL_KEY);
+            /*  Since we have scripts which reside in other prims, we have
+                to send to LINK_SET to they will receive the heartbeat
+                request.  */
+            llMessageLinked(LINK_SET, LM_VX_HEARTBEAT, "REQ", NULL_KEY);
 
             //  Check for heartbeat failure from other scripts
 
             float t = llGetTime();
 
-            if ((t - hbPilotage) > hbTimeout) {
-                if (hbPilotageN == 0) {
-                    tawk("Pilotage script timeout.");
+            integer i;
+            integer n = llGetListLength(hbScripts);
+
+            for (i = 0; i < n; i += 3) {
+                if ((t - llList2Float(hbScripts, i + 1)) > hbTimeout) {
+                    if (llList2Integer(hbScripts, i + 2) == 0) {
+                        tawk("Script " + llList2String(hbScripts, i) + " timeout: not responding.");
+                    }
+                    hbScripts = llListReplaceList(hbScripts,
+                        [ llList2Integer(hbScripts, i + 2) + 1 ], i + 2, i + 2);
                 }
-                hbPilotageN++;
             }
         }
     }

@@ -14,6 +14,9 @@
     integer LM_SO_PRELOAD = 44;     // Preload sound
     integer LM_SO_FLASH = 45;       // Explosion particle effect
 
+    //  Vehicle Auxiliary Messages
+    integer LM_VX_HEARTBEAT = 15;   // Request heartbeat
+
     //  Pilotage messages
     integer LM_PI_PILOT = 27;       // Pilot sit / unsit
 
@@ -161,6 +164,15 @@
                     tawk("Display explosion");
                 }
 /* END SOUND_TRACE */
+
+            //  LM_VX_HEARTBEAT (15): Request for heartbeat
+            } else if (num == LM_VX_HEARTBEAT) {
+                if (str == "REQ") {
+                    /*  Note that since we're not in the root prim, we need
+                        to route the message there, where the Vehicle Auxiliary
+                        script resides.  */
+                    llMessageLinked(LINK_ROOT, LM_VX_HEARTBEAT, llGetScriptName(), NULL_KEY);
+                }
 
             //  LM_PI_PILOT (27): Set pilot agent key
 

@@ -6,6 +6,7 @@
 
     */
 
+    //  Script Processor messages
     integer LM_SP_INIT = 50;        // Initialise
     integer LM_SP_RESET = 51;       // Reset script
     integer LM_SP_STAT = 52;        // Print status
@@ -15,6 +16,9 @@
     integer LM_SP_EOF = 56;         // Script input at end of file
     integer LM_SP_READY = 57;       // New script ready
     integer LM_SP_ERROR = 58;       // Requested operation failed
+
+    //  Vehicle Auxiliary Messages
+    integer LM_VX_HEARTBEAT = 15;   // Request heartbeat
 
     //  Pilotage messages
     integer LM_PI_PILOT = 27;       // Pilot sit / unsit
@@ -242,6 +246,12 @@
                 if (ncBusy) {
                     ncQuery = llGetNotecardLine(ncSource, ncLine);
                     ncLine++;
+                }
+
+            //  LM_VX_HEARTBEAT (15): Request for heartbeat
+            } else if (num == LM_VX_HEARTBEAT) {
+                if (str == "REQ") {
+                    llMessageLinked(LINK_THIS, LM_VX_HEARTBEAT, llGetScriptName(), NULL_KEY);
                 }
 
             //  LM_PI_PILOT (27): Set pilot agent key

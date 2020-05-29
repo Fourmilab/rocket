@@ -13,6 +13,9 @@
     integer LM_TF_ACTIVATE = 73;    // Turn terrain following on or off
     integer LM_TF_TERRAIN = 74;     // Report terrain height to client
 
+    //  Vehicle Auxiliary Messages
+    integer LM_VX_HEARTBEAT = 15;   // Request heartbeat
+
     //  Pilotage messages
     integer LM_PI_PILOT = 27;       // Pilot sit / unsit
 
@@ -182,6 +185,12 @@
                     llSetTimerEvent(tfRate);
                 } else {
                     llSetTimerEvent(0);
+                }
+
+            //  LM_VX_HEARTBEAT (15): Request for heartbeat
+            } else if (num == LM_VX_HEARTBEAT) {
+                if (str == "REQ") {
+                    llMessageLinked(LINK_THIS, LM_VX_HEARTBEAT, llGetScriptName(), NULL_KEY);
                 }
 
             //  LM_PI_PILOT (27): Set pilot agent key

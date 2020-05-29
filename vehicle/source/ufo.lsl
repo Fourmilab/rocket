@@ -24,8 +24,10 @@
 
     list lLights;                   // Lights 0 - 7
 
-    //  Pilotage messages
+    //  Vehicle Auxiliary Messages
+    integer LM_VX_HEARTBEAT = 15;   // Request heartbeat
 
+    //  Pilotage messages
     integer LM_PI_PILOT = 27;       // Pilot sit / unsit
 
     /*  Find a linked prim from its name.  Avoids having to slavishly
@@ -164,9 +166,15 @@
 
         link_message(integer sender, integer num, string str, key id) {
 
+            //  LM_VX_HEARTBEAT (15): Request for heartbeat
+            if (num == LM_VX_HEARTBEAT) {
+                if (str == "REQ") {
+                    llMessageLinked(LINK_THIS, LM_VX_HEARTBEAT, llGetScriptName(), NULL_KEY);
+                }
+
             //  LM_PI_PILOT (27): Pilot sit / unsit
 
-            if (num == LM_PI_PILOT) {
+            } else if (num == LM_PI_PILOT) {
 //llOwnerSay("UFO message sender " + (string) sender + "  num " + (string) num + "  str " + str + "  id " + (string) id);
                 if ((flying = (id != NULL_KEY))) {
                     //  Pilot sits
