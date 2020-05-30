@@ -174,21 +174,18 @@
             if (argn > 1) {
                 string param = llList2String(args, 1);
 
-                //  Test animations
+                //  Fix animations
 
                 if (abbrP(param, "an")) {
                     testAnim = TRUE;
                     llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION);
-
-                //  Test sit
-
                 } else if (abbrP(param, "si")) {
                     llUnSit(whoDat);
                 } else {
-                    tawk("Unknown test item.  Valid: animation/sit");
+                    tawk("Unknown fix item.  Valid: animation/controls");
                 }
             } else {
-                tawk("Test what?  animation/sit");
+                tawk("Fix what?  animation/controls");
             }
 
         //  Status                              Print status
