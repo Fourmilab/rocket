@@ -111,19 +111,6 @@
         return def;
     }
 
-    //  onOff  --  Parse an on/off parameter
-
-    integer onOff(string param) {
-        if (abbrP(param, "on")) {
-            return TRUE;
-        } else if (abbrP(param, "of")) {
-            return FALSE;
-        } else {
-            tawk("Error: please specify on or off.");
-            return -1;
-        }
-    }
-
     //  processCommand  --  Process a command
 
     integer processCommand(key id, string message, integer fromScript) {
@@ -237,11 +224,38 @@
                         siteIndex++;
                         placeSite(siteIndex, radius, t_rad, t_alt, height, randr);
                     }
+                    if (nsites == 1) {
+                        tawk("Deployed SAM site " + (string) siteIndex);
+                    } else {
+                        tawk("Deployed SAM sites " + (string) (siteIndex - (nsites - 1)) +
+                             "–" + (string) siteIndex);
+                    }
                     if (siteIndex > 16) {
                         tawk("Warning: \"Set SAM scan\" cannot detect more than 16 SAM sites.");
                     }
                 }
             }
+
+        //  Help                        Display help text
+
+        } else if (abbrP(command, "he")) {
+            tawk("SAM Site Deployer commands:\n" +
+                 "  deploy n_sites radius t_rad t_alt height distribution\n" +
+                 "    n_sites         Number of sites to place\n" +
+                 "    radius          Maximum distance in X and Y of sites, metres (10)\n" +
+                 "    t_rad           Threat radius of sites (0.1)\n" +
+                 "    t_alt           Threat altitude of sites (99), 0 means 4096 m\n" +
+                 "    height          Displayed height of threat markers (50)\n" +
+                 "    distribution    Distribution of sites: (Uniform)  [Gaussian, Igaussian]\n" +
+                 "  list              List deployed sites in region\n" +
+                 "  remove            Delete all deployed sites\n" +
+                 "For additional information, see the Fourmilab Rocket User Guide"
+                );
+
+        //  List                        List deployed sites in region
+
+        } else if (abbrP(command, "li")) {
+            llRegionSay(siteChannel, "LIST");
 
         //  Remove                      Remove all sites
 
@@ -251,7 +265,7 @@
 
         } else {
             tawk("Huh?  \"" + message + "\" undefined.  Chat /" +
-                (string) commandChannel + " help for the User Guide.");
+                (string) commandChannel + " help for instructions.");
             return FALSE;
         }
         return TRUE;
@@ -304,7 +318,7 @@
             the rez location, create the site, then jump back to
             our original position.  */
 
-llOwnerSay("Place " + (string) siteno + " at " + (string) where + " sparam " + (string) sparam);
+//llOwnerSay("Deploy " + (string) siteno + " at " + (string) where + " sparam " + (string) sparam);
         llSetRegionPos(where);
         llRezObject("SAM site", where, ZERO_VECTOR, ZERO_ROTATION, sparam);
         llSetRegionPos(pos);
@@ -329,5 +343,4 @@ llOwnerSay("Place " + (string) siteno + " at " + (string) where + " sparam " + (
         listen(integer channel, string name, key id, string message) {
             processCommand(id, message, FALSE);
         }
-
     }

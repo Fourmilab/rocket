@@ -7,7 +7,6 @@
 
 
     key owner;                  // UUID of owner
-    integer colour;             // Colour index of marker
 
     integer siteChannel = -982449720;       // Channel for communicating with sites
     string ypres = "Q?+:$$";                // It's pronounced "Wipers"
@@ -42,7 +41,53 @@
     integer threat_altitude;        // Threat altitude
     integer height;                 // Height
 
-    key lastCollision = NULL_KEY;   // Last object we collided with
+    //  ef  --  Edit floats in string to parsimonious representation
+
+    string ef(string s) {
+        integer p = llStringLength(s) - 1;
+
+        while (p >= 0) {
+            //  Ignore non-digits after numbers
+            while ((p >= 0) &&
+                   (llSubStringIndex("0123456789", llGetSubString(s, p, p)) < 0)) {
+                p--;
+            }
+            //  Verify we have a sequence of digits and one decimal point
+            integer o = p - 1;
+            integer digits = 1;
+            integer decimals = 0;
+            while ((o >= 0) &&
+                   (llSubStringIndex("0123456789.", llGetSubString(s, o, o)) >= 0)) {
+                o--;
+                if (llGetSubString(s, o, o) == ".") {
+                    decimals++;
+                } else {
+                    digits++;
+                }
+            }
+            if ((digits > 1) && (decimals == 1)) {
+                //  Elide trailing zeroes
+                while ((p >= 0) && (llGetSubString(s, p, p) == "0")) {
+                    s = llDeleteSubString(s, p, p);
+                    p--;
+                }
+                //  If we've deleted all the way to the decimal point, remove it
+                if ((p >= 0) && (llGetSubString(s, p, p) == ".")) {
+                    s = llDeleteSubString(s, p, p);
+                    p--;
+                }
+                //  Done with this number.  Skip to next non digit or decimal
+                while ((p >= 0) &&
+                       (llSubStringIndex("0123456789.", llGetSubString(s, p, p)) >= 0)) {
+                    p--;
+                }
+            } else {
+                //  This is not a floating point number
+                p = o;
+            }
+        }
+        return s;
+    }
 
     default {
 
@@ -71,8 +116,8 @@
                     threat_altitude = 4096;
                 }
 
-llOwnerSay("Site " + (string) site_number + "  Radius " + (string) threat_radius +
-    "  Altitude " + (string) threat_altitude + "  Height " + (string) height);
+//llOwnerSay("Site " + (string) site_number + "  Radius " + (string) threat_radius +
+//    "  Altitude " + (string) threat_altitude + "  Height " + (string) height);
 
                 //  Set the displayed size to those passed by the deployer
 
@@ -113,13 +158,22 @@ llOwnerSay("Site " + (string) site_number + "  Radius " + (string) threat_radius
         //  The listen event handles commands from the deployer
 
         listen(integer channel, string name, key id, string message) {
-//llOwnerSay("Message channel " + (string) channel + "  name " + name + "  id " + (string) id + "  message " + message);
 
             //  Message from SAM Site Deployer
 
             if (channel == siteChannel) {
                 if (message == ypres) {
                     llDie();
+                } else if (message == "LIST") {
+                    string ccode = llList2String(colours, (site_number / 10) * 2) + "/" +
+                                   llList2String(colours, (site_number % 10) * 2);
+
+                    llOwnerSay("SAM site " + (string) site_number +
+                               " (" + ccode + ")" +
+                               "  Radius " + ef((string) (threat_radius / 10.0)) +
+                               "  Altitude " + (string) threat_altitude +
+                               "  Height " + (string) height +
+                               "  Position: " + ef((string) llGetPos()));
                 }
             }
         }
@@ -131,13 +185,8 @@ llOwnerSay("Site " + (string) site_number + "  Radius " + (string) threat_radius
 
             for (i = 0 ; i < nCol; i++) {
                 key whoId = llDetectedKey(i);
-//llOwnerSay("whoId " + (string) whoId + "  lastCollision " + (string) lastCollision);
-//                if (whoId != lastCollision) {
-//                    lastCollision = whoId;
                     string what = llDetectedName(i);
-//llOwnerSay("What " + what);
 llOwnerSay("Collision with " + what);
-                    key ownerK = llDetectedOwner(i);
                     vector where = llDetectedPos(i);
 
                     /*  Project detected collision position onto surface
@@ -148,7 +197,6 @@ llOwnerSay("Collision with " + what);
                     pos.z = where.z;                    // Snap height to that of collision
                     vector colvec = where - pos;        // Direction vector from centre to collision
                     vector markerPos = pos + (llVecNorm(colvec) * (ssize.x / 2));
-//llOwnerSay("Pos " + (string) pos + "  colvec " + (string) colvec + "  markerPos " + (string) markerPos);
 
                     /*  Place impact marker on surface of cylinder at
                         collision point.  The colour of the marker, passed
