@@ -3243,10 +3243,99 @@ I had thought there might be something wrong with Terrain Following,
 but I made a test in Snowlands and confirmed that it is working as
 intended.
 
+2020 May 28
+
+Implemented trace in the Sounds script.  If trace is set, operations
+such as preloading and playing sound clips and displaying the explosion
+particle effect are logged to the pilot if seated or owner if there is
+no pilot.  This required a changed in Vehicle Management to inform the
+Sounds script of the trace setting and to Pilotage to notify of pilot
+information, since the Sounds script is in a different link and the
+main messages are sent using LINK_THIS to the root prim.  Generation of
+the sound trace output is controlled by SOUND_TRACE in the
+configuration file.
+
+Reviewed all of the Demonstration Mission Script Notecards included in
+the Marketplace listing, made all conform to the most recent tested
+versions, and made backups in the Projects/Rocket/Mission Script
+Notecards folder.  For those from which YouTube videos were made, I
+added the URL of the video to the script comments.
+
+2020 May 29
+
+The SAM Site object which is rezzed by the SAM Site Deployer was
+intended to also be usable as a manually deployed SAM site when setting
+up problems to test evasion.  But if it was rezzed from the inventory,
+it would try to interpret the zero start_param it was passed by on_rez
+and take on whacky position and size parameters. It would also listen
+on the channel from the deployer and destroy itself if the deployer
+received a Remove command, which is probably not what the user wants
+for manually placed sites.  I modified the on_rez() handler to detect a
+zero start_param and skip all of the initialisation based upon it and
+also not listen on the channel from the deployer.
+
+The Set script list command was listing the name of the help file as if
+it were a script.  I added a test in Vehicle Management to keep that
+from happening.
+
+Generalised the heatbeat timer monitoring in Vehicle Auxiliary to
+monitor the status of all other scripts.  A new table of scripts keeps
+track of the last heartbeat and the the number of timeouts for each,
+and heartbeat response code has been added to all other scripts.  This
+is somewhat complicated because we'd been using LINK_THIS to send these
+messages, and that doesn't work with the Sounds script which is in a
+different link (and different between the Rocket and UFO, just to
+further complicate things).  Heartbeat requests are now sent to
+LINK_SET and Sounds replies to LINK_ROOT which gets the messages where
+they belong.
+
+This, of course, leaves the "quis custodiet ipsos custodes" problem,
+since if the the Vehicle Auxiliary script is lost, all of the heartbeat
+mechanism will go with it.  Some day I may add code to one of the other
+scripts which is aware of whether a pilot is seated to watch for
+heartbeat probes from Vehicle Auxiliary and report it missing if it
+doesn't send heartbeat requests within the timeout interval.  But this
+is not that day.
+
+Added display of script status to the main status display in Vehicle
+Auxiliary.  For each script listed in the table, its status from
+llGetScriptState() will be shown as "stopped" or "running", unless it
+is in another link, in which case this information is inaccessible to
+us, in which case it will display "other_link".  In addition, its
+heartbeat status is shown as "active" or "timeout".  This should
+provide some much-needed visibility into script problems when crossing
+region boundaries.
+
+2020 May 30
+
+Added a Help command to the SAM Site Deployer.  This prints an
+abbreviated version of the command summary from the Rocket User Guide
+and directs the user to that document for more information.
+
+Removed debug output from the SAM Site Deployer and SAM Site.  The
+Deploy command now just reports the numbers of the sites it deployed.
+
+Added a List command to the SAM Site Deployer.  It broadcasts a message
+to all SAM Sites in the region on the control channel requesting them
+to list their number, position, and settings.  Since the individual
+sites report asynchronously, the order in which sites are listed is
+random.  This will only report sites placed by the deployer: those
+emplaced manually will not respond.
+
+If the SAM Site Deployer was used at a location elevated above the
+terrain (for example, a floating island or “sky box”), the pillars
+representing the SAM sites would be vertically mis-positioned and
+extend below the feature upon which the deployer was sitting.  I added
+logic in the automatic reposition in SAM Site to perform an llCastRay()
+downward from the pillar to detect features below the pillar and align
+the bottom of the pillar with the tallest feature detected by the ray
+cast.  If the ray cast detects nothing, the greater of llGround() and
+llWater() will be used.  This seems to work correctly both when
+deploying sites on uneven terrain and in the sky.
 
 
 
-*** Wild Z climb run-away in Random across regions starting from Backhill.
+
 
 Langdale Seaside is a gas station and GTFO hub near Denby.
     http://maps.secondlife.com/secondlife/Langdale/27/55/33
