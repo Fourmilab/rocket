@@ -23,8 +23,7 @@ notecards in the vehicle's inventory.  Features include:
       no-entry parcels, automatic diversion around threats
       with autopilot engaged, warning in manual flight
     • Dropping anvils on the ground or objects below the rocket.
-      An interactive target is included for bombing competitions
-      and keeps score.
+      A score-keeping target is included for bombing competitions.
 
 Basic Flight
 
@@ -47,7 +46,7 @@ fly backward.  This is a CARTOON rocket!
 While in flight, floating text will appear above the rocket giving
 its current bearing (0° North, 90° East, 180° South, 270° West),
 Altitude, and the altitude of the terrain below the rocket.  If a
-destination has been specified with “Set destination” the range to
+destination has been specified with “Set destination”, the range to
 the destination in metres and the azimuth angle to the destination
 with respect to the rocket's current orientation will be shown.
 
@@ -245,8 +244,8 @@ specifications are, however, case-sensitive.
                 A list of all marks is displayed with “Set autopilot
                 mark list”.  To clear a mark by name, use “Set
                 autopilot mark clear Name”; omitting the name deletes
-                all marks. To reference a mark in “Set destination” use
-                “mark://Name”, where the Name was given when you
+                all marks.  To reference a mark in “Set destination”
+                use “mark://Name”, where the Name was given when you
                 created it.
 
             Set autopilot SAM n
@@ -295,7 +294,7 @@ specifications are, however, case-sensitive.
                         in an area consisting of the current region
                         and that number of adjacent regions.
                 xl-xh   Low and high bounds for X co-ordinate.  If
-                        a single number is specified, that fixed
+                        a single number is specified, that exact
                         co-ordinate.  If blank, a value between 0
                         and 256.
                 yl-yh   Low and high bounds for Y co-ordinate, with
@@ -419,11 +418,11 @@ specifications are, however, case-sensitive.
 
         Set script
             These commands control the running of scripts stored in
-            notecards in the inventory of the rocket's root prim.
-            Script commands are identical to those entered in local
-            chat (but, of course, are not preceded by a slash and
-            channel number). Blank lines and those beginning with a “#”
-            character are treated as comments and ignored.
+            notecards in the inventory of the rocket object. Script
+            commands are identical to those entered in local chat (but,
+            of course, are not preceded by a slash and channel number).
+            Blank lines and those beginning with a “#” character are
+            treated as comments and ignored.
 
             Set script run name
                 Run the named script.  The name must be specified
@@ -654,13 +653,13 @@ make control keys go dead, and otherwise mitigate the slings and arrows
 of region crossings.  If isn't perfect: sometimes Second Life just
 bungles a region crossing and your avatar crosses leaving the rocket in
 the old region (where, without anybody sitting on it, it is returned to
-your Lost And Found folder in the Inventory, or on a region crossing, a
-passenger may not come across, and find themself stranded in the old
-region with the vehicle long gone.  We try to fix everything that's
-fixable, but some things just aren't.  Think of long-range aviation in
-Second Life as an adventure, like the historic first cross-country
-flight of the Vin Fiz Flyer in 1911, which took 49 days to fly from New
-York to Los Angeles, crashing 16 times along the way.
+your Lost And Found folder in the Inventory), or on a region crossing,
+a passenger may not come across, and be stranded in the old region with
+the vehicle long gone.  We try to fix everything that's fixable, but
+some things just aren't.  Think of long-range aviation in Second Life
+as an adventure, like the historic first cross-country flight of the
+Vin Fiz Flyer in 1911, which took 49 days to fly from New York to Los
+Angeles, crashing 16 times along the way.
     https://en.wikipedia.org/wiki/Vin_Fiz_Flyer
 
 There are some things you can do to reduce the probability of region
