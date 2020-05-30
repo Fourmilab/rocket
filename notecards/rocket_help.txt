@@ -684,6 +684,48 @@ And, finally, remember that this is all for fun.  Second Life isn't
 perfect; life isn't perfect.  Look on the thrills and spills as part of
 the adventure and enjoy it.
 
+Loss of Pilotage Script
+
+One of the strangest and most confusing things which can happen to you
+when Second Life botches a region crossing is Loss of the Pilotage
+Script.  Guidance of the Fourmilab Rocket, whether manual or by the
+autopilot, is performed by the Pilotage script.  Rarely, but not all
+that rarely, in a region crossing the script will not “come across”,
+and the vehicle will be frozen, with the autopilot unable to control it
+and manual control disabled.  This occurs because the Pilotage script
+failed to make it across the region crossing.  Unfortunately, there is
+no way to automatically recover from this flaw in Second Life.  We can
+usually detect it, and will issue a warning in local chat, “Script
+Pilotage timeout: not responding.”  If this is not shortly followed by
+a message, “Script Pilotage script recovered from timeout.”, then it
+probably means the Pilotage script has been lost.
+
+Unfortunately, there is no way to automatically recover from this
+situation.  As far as Second Life is concerned, the script has vanished
+from the vehicle and does not respond to input from the pilot or
+messages from other scripts.  In most cases it can be restored by the
+following somewhat arcane procedure.  Edit the vehicle object while
+you're still sitting on it and select the “Content” tab in the editor.
+You'll see all of the scripts, including “Pilotage”—double click on it
+to open in the script editor.  Now make a reversible change, such as
+adding a space to a comment and then immediately backspacing to delete
+it.  This will allow you to Save the script with the editor's button.
+Saving the script will restore and restart it, and you'll usually see
+the script timeout recovery message in a few seconds.  At this point
+you should be able to control the vehicle once again with the
+navigation keys.  Restarting the Pilotage script will cause all of the
+autopilot settings to be forgotten, so if you were flying on autopilot
+you'll need to re-enter the destination and turn the autopilot back on.
+
+Loss of the Pilotage script is the most frequent and frustrating
+disaster in region crossing, but it is possible to lose other scripts
+as well, which will disable the facilities they provide such as terrain
+following and SAM site evasion.  A heartbeat monitor will report if any
+of the scripts ceases to respond and the Status command lists scripts
+and reports whether they are active or have timed out.  The same
+procedure with the script editor can be used to recover other scripts
+which have timed out.
+
 Control Recovery Amulet
 
 One of the failures which can occur when Second Life botches a region
@@ -743,7 +785,7 @@ It accepts commands as follows:
     deploy n_sites radius t_rad t_alt height distribution
         Place sites where values are as follows, with defaults in
         parentheses:
-            n_sites         Number of sites to place (1)
+            n_sites         Number of sites to place
             radius          Maximum distance in X and Y of sites, metres (10)
             t_rad           Threat radius of sites (0.1)
             t_alt           Threat altitude of sites (99)
@@ -753,17 +795,21 @@ It accepts commands as follows:
                                 Uniform
                                 Gaussian    Bell curve around centre
                                 Igaussian   Inverse bell curve, sparse at centre
+
+    list
+        List all deployed sites in the region.
+
     remove
         Remove all sites previously placed, whether in a single or multiple
-        place commands.
+        deploy commands.
 
-In addition the Access, Channel, and Clear utility command are accepted
-as for the rocket.
+In addition the Access, Channel, and Clear utility commands are
+accepted as for the rocket.
 
-Sites placed are all named "SAM site" so they will be found by the “Set
-SAM scan” command, and have labels starting with “SAM ”.  Sites are
-shown as semi-transparent cylinders whose tops and sides identify them
-by number according to the resistor colour code.
+Sites deployed are all named "SAM site" so they will be found by the
+“Set SAM scan” command, and have labels starting with “SAM ”.  Sites
+are shown as semi-transparent cylinders whose tops and sides identify
+them by number according to the resistor colour code.
 
 If you place too many SAM sites within a region, you may encounter an
 out of memory crash in the vehicle's Set SAM scan command, as the list
