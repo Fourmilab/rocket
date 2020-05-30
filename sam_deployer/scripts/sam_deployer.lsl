@@ -318,7 +318,7 @@
             the rez location, create the site, then jump back to
             our original position.  */
 
-//llOwnerSay("Deploy " + (string) siteno + " at " + (string) where + " sparam " + (string) sparam);
+//llOwnerSay("Deploy " + (string) siteno + " at " + (string) where + " sparam " + (string) sparam + "  pos " + (string) pos);
         llSetRegionPos(where);
         llRezObject("SAM site", where, ZERO_VECTOR, ZERO_ROTATION, sparam);
         llSetRegionPos(pos);

@@ -6,7 +6,7 @@
     */
 
 
-    key owner;                  // UUID of owner
+    key owner;                              // UUID of owner
 
     integer siteChannel = -982449720;       // Channel for communicating with sites
     string ypres = "Q?+:$$";                // It's pronounced "Wipers"
@@ -40,6 +40,16 @@
     integer threat_radius;          // Threat radius
     integer threat_altitude;        // Threat altitude
     integer height;                 // Height
+
+    //  max  --  Maximum of two float arguments
+
+    float max(float a, float b) {
+        if (a > b) {
+            return a;
+        } else {
+            return b;
+        }
+    }
 
     //  ef  --  Edit floats in string to parsimonious representation
 
@@ -133,7 +143,41 @@
                     terrain = water;
                 }
                 vector pos = llGetPos();
-                pos.z = terrain + (height / 2.0);
+
+                /*  Now cast a ray downward from the site's position
+                    and see if we have an obstacle to avoid.  If so,
+                    place the SAM site on top of the closest obstacle.
+                    If we detect nothing, use the higher of the ground
+                    and water levels below us.  This is particularly
+                    important when the user is placing sites on an
+                    object above ground level.  */
+
+                vector where = pos + <0, 0, -((height / 2) + 0.1)>;
+                list rcr = llCastRay(where,
+                    pos + (< 0, 0, -height >),
+                    [ RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 5 ]);
+                integer rcstat = llList2Integer(rcr, -1);
+                float conflictAlt = 0;
+                integer nhits = 0;
+                if (rcstat > 0) {
+                    integer i;
+                    for (i = 0; i < rcstat; i++) {
+                        key what = llList2Key(rcr, i * 2);
+                        vector rhit = llList2Vector(rcr, (i * 2) + 1);
+                        string which = "Ground";
+                        if (what != NULL_KEY) {
+                            which = llKey2Name(what);
+                        }
+//llOwnerSay("Detected " + which + " at " + (string) rhit +
+//           ", range " + (string) llVecDist(pos, rhit));
+                        conflictAlt = max(conflictAlt, rhit.z);
+                        nhits++;
+                    }
+                }
+
+                float zpos = max(conflictAlt, terrain);
+//llOwnerSay("pos " + (string) pos + "  terrain " + (string) terrain + "  water " + (string) //water + "  height " + (string) height + "  zpos " + (string) zpos);
+                pos.z = zpos + (height / 2.0);
                 llSetLinkPrimitiveParamsFast(LINK_THIS,
                     [ PRIM_POSITION, pos ]);
 
