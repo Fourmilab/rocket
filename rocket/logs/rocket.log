@@ -3333,6 +3333,9 @@ cast.  If the ray cast detects nothing, the greater of llGround() and
 llWater() will be used.  This seems to work correctly both when
 deploying sites on uneven terrain and in the sky.
 
+2020 May 31
+
+Version 1.0 released to the Marketplace.
 
 
 
