@@ -108,7 +108,7 @@ print("$df -> $odf\n");
 
                 if ($l =~ m:^\s*/\*\s+IF\s+(\S.*)$:) {  # IF block ?
                     #   Increment nesting of configuration switches
-                    $nest++;                        # Increment nesting level
+                    $nest++;                    # Increment nesting level
 
                     my $expr = $1;
                     $expr =~ s:\s*\*/$::;       # Trim trailing delimeter, if any
@@ -128,7 +128,7 @@ print("$df -> $odf\n");
                         if (!$on) {
                             $offnest = $nest;       # Nesting level where we turned off
                         }
-                        print(FO "/* IF $expr " . ($on ? " */" : "") . "\n");
+                        print(FO "/* IF $expr" . ($on ? " */" : "") . "\n");
                     } else {
                         #   IF within disabled code block
                         $l =~ s:\s*\*/::;           # Must remove close comment delimiter

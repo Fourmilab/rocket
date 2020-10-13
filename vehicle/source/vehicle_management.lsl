@@ -45,6 +45,10 @@
     integer autoSuspendExp = 0; // Time autopilot suspend expires
     float autoSAMinterval = 1;  // Probe SAM threats every this seconds
 
+    //  Region crossing recovery modes
+
+    integer permissionsRecover = FALSE; // Recover permissions on region crossing ?
+
     //  Terrain following settings
 
     integer tfObstacles = TRUE; // Fly up to avoid obstacles in path ?
@@ -266,7 +270,8 @@
                                       Z_THRUST,                 // 8: Z thrust
                                       restrictAccess,           // 9: Access restriction: owner, group, public
                                       tfObstacles,              // 10: Terrain following: avoid obstacles ?
-                                      autoSAMinterval           // 11: SAM threat probe interval
+                                      autoSAMinterval,          // 11: SAM threat probe interval
+                                      permissionsRecover        // 12: Recover permissions on region crossing
                                     ]),
             whoDat);
 
@@ -352,7 +357,18 @@
 
         } else if (llSubStringIndex(dest, "secondlife://") >= 0) {
             /*  SLUrl like:
-                "secondlife"//Fourmilab/120/122/28" */
+                "secondlife"//Fourmilab/120/122/28"
+
+                SLUrls for the Aditi Beta Grid look like:
+                "secondlife://Aditi/secondlife/Astutula/207/247/22"
+                but such URLs, if parsed like one for the main grid, will
+                try to look up a region of Aditi and fail.  We first
+                transform Aditi URLs so they can be parsed as if on the
+                main grid.  */
+            integer p = llSubStringIndex(dest, "://Aditi/secondlife/");
+            if (p >= 0) {
+                dest = llDeleteSubString(dest, p + 3, p + 19);
+            }
             list url = llParseString2List(dest, [ "/" ], []);
             return [ llUnescapeURL(llList2String(url, 1)),
                      < llList2Float(url, 2), llList2Float(url, 3), llList2Float(url, 4) > ];
@@ -793,6 +809,11 @@
                 if (!showPanel) {
                     llSetLinkPrimitiveParamsFast(LINK_THIS, [ PRIM_TEXT, "", ZERO_VECTOR, 0 ]);
                 }
+
+            //  Permissions on/off
+            } else if (abbrP(param, "pe")) {
+                permissionsRecover = onOff(svalue);
+                updatePilotageSettings();
 
             /*  SAM ...   SAM messages are processed by the SAM Sites script.
                           These messages all cause suspension of a script until

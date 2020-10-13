@@ -3337,6 +3337,90 @@ deploying sites on uneven terrain and in the sky.
 
 Version 1.0 released to the Marketplace.
 
+2020 July 29
+
+SLURLs on the Aditi Beta grid look like:
+    secondlife://Aditi/secondlife/Astutula/207/247/22
+and were incorrectly parsed by parseDestination() in Vehicle Management
+and SAM Sites.  I added code to handle these SLUrls when specifying a
+destination.  Note that at the level of our use of the destination,
+there is no difference in its being on Aditi.
+
+On the Aditi Beta grid, especially in the new Blake Sea region running
+on servers hosted at AWS, our code which releases and re-requests
+permissions for controls and camera position at every region crossing
+leads to script error pop-ups:
+    Camera control currently only supported for attachments
+    and objects on which you are sitting
+and loss of control.  I added a new configuration statement:
+    Set permissions on/off
+which allows disabling this reclaiming of permissions on region
+crossings.  At the moment this is on by default, but if the behaviour
+seen on Aditi becomes common on the main grid, I will set this off by
+default and provide another way to restore permissions if they are lost
+(probably another Mend command option).
+
+2020 August 30
+
+In an attempt to track down the cause of the camera control errors for
+which I put in a work-around on 2020-07-29, I added code in Pilotage
+to, when permissionsRecover is set (the standard behaviour in version
+1.0, recovering on every region crossing), to test whether the avatar
+is yet seated on the vehicle after the crossing with:
+    llAvatarOnLinkSitTarget(lPilot) != NULL_KEY
+and skip releasing and reclaiming permissions if it isn't.  This does
+not work: the failure still occurs, just as frequently as before.  So,
+whatever is causing the camera position message, it isn't that the
+avatar isn't yet re-seated on the vehicle.  So, for the moment the
+remedy remains disabling permissions recovery on regions crossings by
+default.
+
+Permissions recovery on region crossing is now controlled by the new
+configuration parameter:
+    Set permissions on/off
+which defaults to off: disabling permissions recovery.  This is
+currently implemented only in the development rocket on the
+Greensward.
+
+I did around 45 minutes of testing around the houseboat running the
+Random across regions script with Set permissions off and experienced
+no disasters after crossing 78 regions, travelling 18 km at a mean
+speed of 7.35 m/sec.  There were a few camera bobbles on region
+crossings, all of which were fixed by "Mend camera".  So, it looks
+like the plan to disable permissions recovery by default in the 1.1
+release is sound.
+
+Added documentation of "Set permissions" to the Rocket User Guide.
+
+2020 August 31
+
+Added display of "Set permissions" mode to the Pilotage status edited
+by Vehicle Auxiliary.  It is shown on the Permissions line as "Region
+cross recovery:".
+
+The vehicle/lslconf.pl utility was adding a trailing space on /* IF
+statements which disabled code and an extra space before the closing
+*/ on such statements which enabled code.  Fixed, and propagated to
+copies of the utility in other projects.
+
+2020 September 5
+
+After further experimentation, I think that what might be happening
+with the random uncommanded collision boing sounds is that we're
+responding to a flurry of collision reports by making many calls
+on llPlaySound() and that these may somehow getting queued (even
+though we do not enable sound queueing) and that somehow they are
+coming out later at irrelevant times.  I still don't know if this
+has something to do with our preloading the sound.  The next
+experiment is to skip calls on llPlaySound() unless a suitable
+time has elapsed since the last call and see if that gets rid of
+the boings from the blue.
+
+2020 October 13
+
+Version 1.1 released to the Marketplace.
+
+
 
 
 

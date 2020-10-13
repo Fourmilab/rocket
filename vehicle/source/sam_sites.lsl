@@ -206,7 +206,18 @@
                      < llList2Float(url, 4), llList2Float(url, 5), llList2Float(url, 6) > ];
         } else if (llSubStringIndex(dest, "secondlife://") >= 0) {
             /*  SLUrl like:
-                "http://maps.secondlife.com/secondlife/Fourmilab/120/122/28" */
+                "secondlife"//Fourmilab/120/122/28"
+
+                SLUrls for the Aditi Beta Grid look like:
+                "secondlife://Aditi/secondlife/Astutula/207/247/22"
+                but such URLs, if parsed like one for the main grid, will
+                try to look up a region of Aditi and fail.  We first
+                transform Aditi URLs so they can be parsed as if on the
+                main grid.  */
+            integer p = llSubStringIndex(dest, "://Aditi/secondlife/");
+            if (p >= 0) {
+                dest = llDeleteSubString(dest, p + 3, p + 19);
+            }
             list url = llParseString2List(dest, [ "/" ], []);
             return [ llUnescapeURL(llList2String(url, 1)),
                      < llList2Float(url, 2), llList2Float(url, 3), llList2Float(url, 4) > ];

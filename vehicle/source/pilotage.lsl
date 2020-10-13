@@ -83,6 +83,10 @@
     vector destGrid;            // Grid co-ordinates of destination
     vector destRegc;            // Destination co-ordinates within region
 
+    //  Region crossing recovery modes
+
+    integer permissionsRecover = FALSE; // Recover permissions on region crossing ?
+
     //  Terrain following
 
     float tfTerrain = 0;        // Current terrain estimate
@@ -127,7 +131,6 @@
     integer hitH;               // Target listener handle
     integer T_nhits;            // Total hits
     integer T_nscore;           // Total score for all hits
-
 
     //  Link indices within the object
 
@@ -1058,9 +1061,11 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
                     going on, but experimentation and empirical observation
                     that this seems to do the trick in most circumstances.  */
 
-                regionChangeControls = TRUE;
-                llReleaseControls();
-                llRequestPermissions(agent, pilotPerms);
+                if (permissionsRecover) {
+                    regionChangeControls = TRUE;
+                    llReleaseControls();
+                    llRequestPermissions(agent, pilotPerms);
+                }
             }
 
             if (change & CHANGED_LINK) {
@@ -1136,7 +1141,8 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
                         fwd, llList2Float(edge, 0), llList2String(edge, 1),
                         llList2String(quads, llList2Integer(quad, 0)), cor,
                         llGetFreeMemory(), llGetUsedMemory(),
-                        agent, llGetPermissions(), llGetPermissionsKey()
+                        agent, llGetPermissions(), llGetPermissionsKey(),
+                        permissionsRecover
                                             ]),
                 id);
 
@@ -1164,6 +1170,7 @@ llLinkSitTarget(findLinkNumber("Dome"), ZERO_VECTOR, ZERO_ROTATION); // Remove b
                 restrictAccess = llList2Integer(s, 9);      // 9: Access restriction: owner, group, public
                 tfObstacles = llList2Integer(s, 10);        // 10: Terrain following: evade obstacles ?
                 autoSAMinterval = llList2Float(s, 11);      // 11: SAM threat probe interval
+                permissionsRecover = llList2Integer(s, 12); // 12: Recover permissions on region crossing
 
             //  LM_PI_ENGAGE (25): Engage/disengage autopilot
 

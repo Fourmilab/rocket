@@ -319,6 +319,24 @@ specifications are, however, case-sensitive.
             Show or hide the pilot's control panel, displayed as
             floating text above the pilot's seat.
 
+        Set permissions on/off
+            A common problem in region crossings in Second Life has
+            been loss of pilot control of the vehicle and/or loss of
+            the camera position due to the permissions required for
+            these items not being preserved across the region crossing.
+            To work around this problem, the vehicle was originally
+            configured to release and restore these permissions on
+            every region crossing.  This worked well until changes were
+            made to Second Life region crossings in mid-2020, at which
+            point sporadic errors began to be reported about obtaining
+            camera permissions.  At the same time, occurrences of loss
+            of permissions became much less common.  As of version 1.1
+            of the Rocket and UFO, the re-establishment of permissions
+            on region crossings has been disabled by default.  You can
+            restore this behaviour with “Set permissions on” if you
+            find that yields better results in region crossings in the
+            future.
+
         Set SAM
             These commands control the Surface-to-Air Missile (SAM)
             threat evasion system.  The SAM system can be used to mark

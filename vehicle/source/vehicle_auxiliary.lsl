@@ -360,6 +360,7 @@
                 key agent = llList2Key(arg, 20);
                 integer perms = llList2Integer(arg, 21);
                 key pfk = llList2Key(arg, 22);
+                integer permissionsRecovery = llList2Integer(arg, 23);
 
                 string stat = "Pilotage status:  \n";
                 integer ftime = 0;
@@ -407,7 +408,8 @@
                     pft += " +CAM";
                 }
                 stat += "    Permissions: " + (string) perms + pft + " granted by " +
-                    (string) pfk + "\n";
+                    (string) pfk + " Region cross recovery: " +
+                    (string) permissionsRecovery + "\n";
                 stat += "    Script memory.  Free: " + (string) mFree +
                         "  Used: " + (string) mUsed + " (" +
                         (string) ((integer) llRound((mUsed * 100.0) / (mUsed + mFree))) + "%)";
